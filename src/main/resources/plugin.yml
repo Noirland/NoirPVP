@@ -1,0 +1,6 @@
+name: NoirPVP
+version: 0.0.1
+main: com.github.margeobur.noirpvp.NoirPVPPlugin
+author: margeobur
+description: PVP management for Noirland, 2018+
+depend: [GriefPrevention]
