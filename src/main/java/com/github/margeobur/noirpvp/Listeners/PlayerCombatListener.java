@@ -6,7 +6,6 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.PlayerData;
 
 import org.bukkit.ChatColor;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
@@ -20,21 +19,19 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.projectiles.ProjectileSource;
 
-import java.util.ArrayList;
-
 /**
- * Listens to and handles events directly related to PVP combat.
+ * Listens to and handles events directly related to PVP combat that has yet to result in a fatality.
  */
 public class PlayerCombatListener implements Listener {
 
-    private final String COMBAT_DENY_MESSAGE = ChatColor.RED + "You can't hurt a player in a claim.";
+    private final String CLAIM_DENY_MESSAGE = ChatColor.RED + "You can't hurt a player in a claim.";
+    private final String PROTECTED_DENY_MESSAGE = ChatColor.RED + "That player has a PVP cooldown";
+    private final String SELF_COOLDOWN_DENY_MESSAGE = ChatColor.RED + "You have a PVP cooldown";
 
-    private GriefPrevention _gp;
-    private ArrayList<PVPPlayer> _players;
+    private GriefPrevention gp;
 
-    public PlayerCombatListener(GriefPrevention gp, ArrayList<PVPPlayer> players) {
-        _gp = gp;
-        _players = players;
+    public PlayerCombatListener(GriefPrevention gp) {
+        this.gp = gp;
     }
 
     /**
@@ -61,22 +58,35 @@ public class PlayerCombatListener implements Listener {
         }
 
         Player victim = (Player) event.getEntity();
-        PlayerData victimData = _gp.dataStore.getPlayerData(victim.getUniqueId());
-        PlayerData attackerData = _gp.dataStore.getPlayerData(attacker.getUniqueId());
+        PlayerData victimData = gp.dataStore.getPlayerData(victim.getUniqueId());
+        PlayerData attackerData = gp.dataStore.getPlayerData(attacker.getUniqueId());
 
-        Claim claimVicIn = _gp.dataStore.getClaimAt(victim.getLocation(), false, victimData.lastClaim);
-        Claim claimAttIn = _gp.dataStore.getClaimAt(attacker.getLocation(), false, attackerData.lastClaim);
+        Claim claimVicIn = gp.dataStore.getClaimAt(victim.getLocation(), false, victimData.lastClaim);
+        Claim claimAttIn = gp.dataStore.getClaimAt(attacker.getLocation(), false, attackerData.lastClaim);
         if(!(claimVicIn == null && claimAttIn == null)) {
             // Either player is standing in a claim.
             if(isWrongDamageType(event.getCause())) {
                 event.setCancelled(true);
-                attacker.sendMessage(COMBAT_DENY_MESSAGE);
+                attacker.sendMessage(CLAIM_DENY_MESSAGE);
                 return;
             }
         }
+
+        PVPPlayer victimPVP = PVPPlayer.getPlayerByUUID(victim.getUniqueId());
+        if(!victimPVP.canBeHurt()) {
+            event.setCancelled(true);
+            attacker.sendMessage(PROTECTED_DENY_MESSAGE);
+            return;
+        }
+        PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(attacker.getUniqueId());
+        if(!attackerPVP.canBeHurt()) {
+            event.setCancelled(true);
+                attacker.sendMessage(SELF_COOLDOWN_DENY_MESSAGE);
+            return;
+        }
+
         // The damage is allowed through because either both players are outside a claim or it is tick damage
-        PVPPlayer victimPVP = PVPPlayer.getPlayerByUUID(victim.getUniqueId(), _players);
-        victimPVP.setLastDamagePVP(true);
+        victimPVP.setLastDamagePVP(true, attacker.getUniqueId());   // This will flag the current time internally, to track the 5-sec effect
     }
 
     private boolean isWrongDamageType(DamageCause cause) {
@@ -95,7 +105,7 @@ public class PlayerCombatListener implements Listener {
     @EventHandler
     public void onItemDamage(PlayerItemDamageEvent event) {
         Player player = event.getPlayer();
-        PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(player.getUniqueId(), _players);
+        PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(player.getUniqueId());
 
         if(playerPVP.lastDamagePVP()) {
             if(isArmourOrWeapon(event.getItem(), player.getInventory())) {
@@ -122,8 +132,8 @@ public class PlayerCombatListener implements Listener {
             return;
         }
         Player player = (Player) event.getEntity();
-        PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(player.getUniqueId(), _players); {
-            playerPVP.setLastDamagePVP(false);
+        PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(player.getUniqueId()); {
+            playerPVP.setLastDamagePVP(false, null);
         }
     }
 }

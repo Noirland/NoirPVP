@@ -9,16 +9,10 @@ import java.util.ArrayList;
 
 public class PlayerServerListener implements Listener {
 
-    private ArrayList<PVPPlayer> _players;
-
-    public PlayerServerListener(ArrayList<PVPPlayer> players) {
-        _players = players;
-    }
+    public PlayerServerListener() { }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        if(PVPPlayer.getPlayerByUUID(event.getPlayer().getUniqueId(), _players) == null) {
-            _players.add(new PVPPlayer(event.getPlayer().getUniqueId()));
-        }
+        PVPPlayer.addIfNotPresent(event.getPlayer().getUniqueId());
     }
 }

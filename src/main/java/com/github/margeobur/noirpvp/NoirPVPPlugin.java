@@ -1,5 +1,7 @@
 package com.github.margeobur.noirpvp;
 
+import com.github.margeobur.noirpvp.Listeners.PlayerCommandListener;
+import com.github.margeobur.noirpvp.Listeners.PlayerDeathListener;
 import com.github.margeobur.noirpvp.Listeners.PlayerServerListener;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
@@ -15,18 +17,16 @@ import java.util.ArrayList;
  */
 public class NoirPVPPlugin extends JavaPlugin {
 
-    private ArrayList<PVPPlayer> _players = new ArrayList<PVPPlayer>();
-
     @Override
     public void onEnable() {
-        getLogger().info("onEnable is called!");
-
         GriefPrevention gp = (GriefPrevention) Bukkit.getPluginManager().getPlugin("GriefPrevention");
-        getServer().getPluginManager().registerEvents(new PlayerServerListener(_players), this);
-        getServer().getPluginManager().registerEvents(new PlayerCombatListener(gp, _players), this);
+
+        // ---------- Listeners ----------
+        getServer().getPluginManager().registerEvents(new PlayerServerListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerCombatListener(gp), this);
+        getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerCommandListener(), this);
     }
     @Override
-    public void onDisable() {
-        getLogger().info("onDisable is called!");
-    }
+    public void onDisable() { }
 }
