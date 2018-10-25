@@ -1,8 +1,11 @@
 package com.github.margeobur.noirpvp;
 
+import com.github.margeobur.noirpvp.trials.TrialManager;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * A class encapsulating the information relevant to the PVP status of a Player. This class is also an encapsulation
@@ -18,7 +21,6 @@ public class PVPPlayer {
     private static ArrayList<PVPPlayer> players = new ArrayList<>();
 
     private UUID playerID;
-
     private UUID attackerID;
     private boolean lastDamagePVP = false;
     private LocalDateTime lastPVP;
@@ -27,6 +29,12 @@ public class PVPPlayer {
     private enum DeathState { CLEAR, PROTECTED, COOLDOWN, PROTECTED_COOLDOWN } // used in determining whether the user can /back atm
     private DeathState deathState = DeathState.CLEAR;
 
+    private int crimeMarks = 0;
+    private Set<PVPPlayer> victims = new HashSet<>();
+    private enum LegalState { CLEAN, INNOCENT, GUILTY }
+    private LegalState legalState;
+    private LocalDateTime lastConviction;
+
     public PVPPlayer(UUID playerID) {
         this.playerID = playerID;
     }
@@ -34,6 +42,12 @@ public class PVPPlayer {
     public UUID getID() {
         return playerID;
     }
+
+    public Player getPlayer() {
+        return Bukkit.getPlayer(playerID);
+    }
+
+    /* Victim related methods */
 
     public boolean lastDamagePVP() {
         return lastDamagePVP;
@@ -76,9 +90,9 @@ public class PVPPlayer {
             return;     // we must be CLEAR
         }
         LocalDateTime currentTime = LocalDateTime.now();
-        LocalDateTime protectionDeactivation = lastDeath.plusSeconds(30);
-        LocalDateTime coolDownDeactivation = lastDeath.plusMinutes(5);
-        LocalDateTime doubleDeathDeactivation = lastDeath.plusMinutes(2);
+        LocalDateTime protectionDeactivation = lastDeath.plusSeconds(NoirPVPPlugin.PROTECTION_DURATION);
+        LocalDateTime coolDownDeactivation = lastDeath.plusSeconds(NoirPVPPlugin.COOLDOWN_DURATION);
+        LocalDateTime doubleDeathDeactivation = lastDeath.plusSeconds(NoirPVPPlugin.DOUBLE_PROTECTION_DURATION);
 
         if(deathState.equals(DeathState.PROTECTED)) {
             if(currentTime.isAfter(protectionDeactivation) && currentTime.isBefore(coolDownDeactivation)) {
@@ -97,6 +111,9 @@ public class PVPPlayer {
         }   // if in CLEAR state then we will always remain CLEAR (we only leave it via death in doDeath())
     }
 
+    /**
+     * Determines if a player can use the /back command.
+     */
     public boolean canBack() {
         updateState();
         if(deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
@@ -106,6 +123,9 @@ public class PVPPlayer {
         }
     }
 
+    /**
+     * Determines if the player can be hurt. If they can't be hurt, then they can't hurt others.
+     */
     public boolean canBeHurt() {
         updateState();
         if(deathState.equals(DeathState.PROTECTED) || deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
@@ -113,6 +133,38 @@ public class PVPPlayer {
         } else {
             return true;
         }
+    }
+
+    /**
+     * Increments the number of crime marks and dispatches a new trial if the player has reached a multiple of 5.
+     */
+    public void doMurder(PVPPlayer victim) {
+        crimeMarks++;
+        victims.add(victim);
+        if(crimeMarks % 5 == 0) {
+            TrialManager.getInstance().dispatchNewTrial(this);
+        }
+    }
+
+    public void findGuilty() {
+        legalState = LegalState.GUILTY;
+        lastConviction = LocalDateTime.now();
+    }
+
+    public void releaseFromJail() {
+        legalState = LegalState.CLEAN;
+    }
+
+    /**
+     * Returns a copy of the set of victims
+     */
+    public Set<PVPPlayer> getVictims() {
+        Set<PVPPlayer> victimsCopy = new HashSet<>(victims);
+        return victimsCopy;
+    }
+
+    public int getCrimeMarks() {
+        return crimeMarks;
     }
 
     /* Managing the static collection of players */

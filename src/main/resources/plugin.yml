@@ -4,3 +4,9 @@ main: com.github.margeobur.noirpvp.NoirPVPPlugin
 author: margeobur
 description: PVP management for Noirland, 2018+
 depend: [GriefPrevention]
+commands:
+  bypass:
+    description: This command selects your choice as being PvP-on.
+    usage: Type /pvpon, then type /pvpyes to set as PvP-on and join the server.
+    permission: punchblockpvp.newuser
+    permission-message: You aren't a new player. This command is only for new players.

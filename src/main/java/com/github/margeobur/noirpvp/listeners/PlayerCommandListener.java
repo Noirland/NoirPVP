@@ -20,9 +20,8 @@ public class PlayerCommandListener implements Listener {
 
         PVPPlayer playerInfo = PVPPlayer.getPlayerByUUID(event.getPlayer().getUniqueId());
 
-        if(playerInfo != null && !playerInfo.canBack())
-        {
-            event.getPlayer().sendMessage("You cannot use /back for 5 minutes after dying twice in PVP.");
+        if(playerInfo != null && !playerInfo.canBack()) {
+            event.getPlayer().sendMessage("You cannot use /back for 20 seconds after dying twice in PVP.");
             event.setCancelled(true);
         }
     }

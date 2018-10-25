@@ -4,6 +4,7 @@ import com.github.margeobur.noirpvp.listeners.PlayerCommandListener;
 import com.github.margeobur.noirpvp.listeners.PlayerDeathListener;
 import com.github.margeobur.noirpvp.listeners.PlayerServerListener;
 import com.github.margeobur.noirpvp.listeners.PlayerCombatListener;
+import com.github.margeobur.noirpvp.trials.TrialEventListener;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
 import org.bukkit.Bukkit;
@@ -14,6 +15,10 @@ import org.bukkit.plugin.java.JavaPlugin;
  * database and config, etc...
  */
 public class NoirPVPPlugin extends JavaPlugin {
+
+    public static final int PROTECTION_DURATION = 10;
+    public static final int COOLDOWN_DURATION = 30;
+    public static final int DOUBLE_PROTECTION_DURATION = 20;
 
     public static NoirPVPPlugin getPlugin() {
         return (NoirPVPPlugin) Bukkit.getPluginManager().getPlugin("NoirPVP");
@@ -28,6 +33,7 @@ public class NoirPVPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerCombatListener(gp), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerCommandListener(), this);
+        getServer().getPluginManager().registerEvents(new TrialEventListener(), this);
     }
     @Override
     public void onDisable() { }

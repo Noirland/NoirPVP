@@ -14,17 +14,17 @@ public class DelayedMessager {
     }
 
     private class SendMessageTask extends BukkitRunnable {
-        Player _player;
-        String _message;
+        Player player;
+        String message;
 
         SendMessageTask(Player player, String message) {
-            _player = player;
-            _message = message;
+            this.player = player;
+            this.message = message;
         }
 
         @Override
         public void run() {
-            _player.sendMessage(_message);
+            player.sendMessage(message);
         }
     }
 }
