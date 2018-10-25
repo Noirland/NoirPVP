@@ -1,11 +1,9 @@
-package com.github.margeobur.noirpvp.Listeners;
+package com.github.margeobur.noirpvp.listeners;
 
 import com.github.margeobur.noirpvp.PVPPlayer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-
-import java.util.ArrayList;
 
 public class PlayerServerListener implements Listener {
 

@@ -1,8 +1,6 @@
-package com.github.margeobur.noirpvp.Listeners;
+package com.github.margeobur.noirpvp.listeners;
 
 import com.github.margeobur.noirpvp.PVPPlayer;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;

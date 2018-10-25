@@ -1,4 +1,4 @@
-package com.github.margeobur.noirpvp.Listeners;
+package com.github.margeobur.noirpvp.listeners;
 
 import com.github.margeobur.noirpvp.PVPPlayer;
 import me.ryanhamshire.GriefPrevention.Claim;
@@ -81,12 +81,13 @@ public class PlayerCombatListener implements Listener {
         PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(attacker.getUniqueId());
         if(!attackerPVP.canBeHurt()) {
             event.setCancelled(true);
-                attacker.sendMessage(SELF_COOLDOWN_DENY_MESSAGE);
+            attacker.sendMessage(SELF_COOLDOWN_DENY_MESSAGE);
             return;
         }
 
         // The damage is allowed through because either both players are outside a claim or it is tick damage
-        victimPVP.setLastDamagePVP(true, attacker.getUniqueId());   // This will flag the current time internally, to track the 5-sec effect
+        // This will flag the current time internally, to track the 5-sec effect
+        victimPVP.setLastDamagePVP(true, attacker.getUniqueId());
     }
 
     private boolean isWrongDamageType(DamageCause cause) {

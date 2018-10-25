@@ -1,4 +1,4 @@
-package com.github.margeobur.noirpvp.Listeners;
+package com.github.margeobur.noirpvp.listeners;
 
 import com.github.margeobur.noirpvp.PVPPlayer;
 import org.bukkit.event.Listener;
