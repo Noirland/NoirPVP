@@ -3,17 +3,21 @@ package com.github.margeobur.noirpvp;
 import com.github.margeobur.noirpvp.listeners.PlayerCommandListener;
 import com.github.margeobur.noirpvp.listeners.PlayerDeathListener;
 import com.github.margeobur.noirpvp.listeners.PlayerServerListener;
+import com.github.margeobur.noirpvp.listeners.PlayerCombatListener;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import com.github.margeobur.noirpvp.listeners.PlayerCombatListener;
 
 /**
  * The NoirPVP plugin class. Here you'll find command and event registration, initialisation of
  * database and config, etc...
  */
 public class NoirPVPPlugin extends JavaPlugin {
+
+    public static NoirPVPPlugin getPlugin() {
+        return (NoirPVPPlugin) Bukkit.getPluginManager().getPlugin("NoirPVP");
+    }
 
     @Override
     public void onEnable() {

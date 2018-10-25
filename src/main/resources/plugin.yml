@@ -1,5 +1,5 @@
 name: NoirPVP
-version: 0.0.1
+version: 0.1.2
 main: com.github.margeobur.noirpvp.NoirPVPPlugin
 author: margeobur
 description: PVP management for Noirland, 2018+

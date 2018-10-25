@@ -1,6 +1,8 @@
 package com.github.margeobur.noirpvp.listeners;
 
 import com.github.margeobur.noirpvp.PVPPlayer;
+import com.github.margeobur.noirpvp.tools.DelayedMessager;
+import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -12,6 +14,12 @@ import java.time.LocalDateTime;
  * Listens to and handles events directly related to PVP deaths
  */
 public class PlayerDeathListener implements Listener {
+
+    private static final String PLAYER_PROTECTION_END = ChatColor.RED + "You are no longer protected from PVP";
+    private static final String PLAYER_COOLDOWN_END = ChatColor.RED + "You are no longer protected from PVP and may now use /back";
+    private static final int PROTECTION_LENGTH = 30;
+    private static final int COOLDOWN_LENGTH = 120;
+
 
     /**
      * Listens for player deaths, determines if they are PVP related and handles them accordingly.
@@ -39,6 +47,12 @@ public class PlayerDeathListener implements Listener {
         event.setKeepLevel(true);
         playerInfo.doDeath();
         //Player attacker = Bukkit.getPlayer(playerInfo.getLastAttackerID());
-    }
 
+        DelayedMessager messager = new DelayedMessager();
+        if(playerInfo.canBack()) {
+            messager.scheduleMessage(event.getEntity(), PLAYER_PROTECTION_END, PROTECTION_LENGTH);
+        } else {
+            messager.scheduleMessage(event.getEntity(), PLAYER_COOLDOWN_END, COOLDOWN_LENGTH);
+        }
+    }
 }
