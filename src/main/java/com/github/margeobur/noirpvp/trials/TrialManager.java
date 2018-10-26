@@ -6,6 +6,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.UUID;
 
 /**
  * Singleton class that manages queuing and scheduling of Trials.
@@ -16,9 +17,9 @@ public class TrialManager {
     private TrialManager() {}
 
     private static final int TRIAL_DURATION_SECS = 60;
+    public enum VoteResult { NO_TRIAL , ALREADY_VOTED , NOT_ALLOWED, SUCCESS }
 
     private Deque<Trial> trials = new ArrayDeque<>();
-    private Trial currentTrial;
 
     public static TrialManager getInstance() {
         if(instance == null) {
@@ -31,13 +32,6 @@ public class TrialManager {
         Trial newTrial = new Trial(_attacker);
         trials.addLast(newTrial);
         tryDoNextTrial();
-    }
-
-    public boolean trialInProgress() {
-        if(trials.isEmpty()) {
-            return false;
-        }
-        return trials.peekFirst().isInProgress();
     }
 
     private void tryDoNextTrial() {
@@ -55,7 +49,6 @@ public class TrialManager {
         // it must be pending, so we can start it and schedule its completion.
 
         mostRecentTrial.start();
-        currentTrial = mostRecentTrial;
         scheduleTrialEnd();
     }
 
@@ -63,14 +56,39 @@ public class TrialManager {
         BukkitRunnable trialEndTask = new BukkitRunnable() {
             @Override
             public void run() {
+                Trial currentTrial = trials.peekFirst();
                 currentTrial.end();
                 trials.remove(currentTrial);
-                currentTrial = null;
                 tryDoNextTrial();
             }
         };
 
         int durationInTicks = 20 * TRIAL_DURATION_SECS;
         trialEndTask.runTaskLater(NoirPVPPlugin.getPlugin(), durationInTicks);
+    }
+
+    public boolean trialInProgress() {
+        if(trials.isEmpty()) {
+            return false;
+        }
+        return trials.peekFirst().isInProgress();
+    }
+
+    public VoteResult addVoteToCurrentTrial(UUID voterID, boolean voteIsGuilty) {
+        Trial currentTrial = trials.peekFirst();
+        if(currentTrial == null || !currentTrial.isInProgress()) {
+            return VoteResult.NO_TRIAL;
+        }
+
+        if(currentTrial.playerHasVoted(voterID)) {
+            return VoteResult.ALREADY_VOTED;
+        }
+
+        if(voterID.equals(currentTrial.getDefendant().getPlayer().getUniqueId())) {
+            return VoteResult.NOT_ALLOWED;
+        }
+
+        currentTrial.addVote(voterID, voteIsGuilty);
+        return VoteResult.SUCCESS;
     }
 }

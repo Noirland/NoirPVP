@@ -5,8 +5,17 @@ author: margeobur
 description: PVP management for Noirland, 2018+
 depend: [GriefPrevention]
 commands:
-  bypass:
-    description: This command selects your choice as being PvP-on.
-    usage: Type /pvpon, then type /pvpyes to set as PvP-on and join the server.
-    permission: punchblockpvp.newuser
-    permission-message: You aren't a new player. This command is only for new players.
+  innocent:
+    description: Casts a vote in the current trial, declaring the defendant as INNOCENT.
+    usage: /innocent.
+    permission: noirpvp.vote
+  guilty:
+    description: Casts a vote in the current trial, declaring the defendant as GUILTY.
+    usage: /guilty
+    permission: noirpvp.vote
+  crime:
+    description: Displays information about a player's crime status.
+    usage: Use "/crime" to see how many crime marks you have. Use "/crime top" to see the players with the most crimes. Use "/crime <player name>" to see how many crimes a particular player has.
+permissions:
+  noirpvp.vote:
+    description: Allows players to use /innocent and /guilty to vote in trials.

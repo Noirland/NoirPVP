@@ -55,7 +55,7 @@ public class TrialEventListener implements Listener {
             Bukkit.getServer().broadcastMessage(broadcast.toString());
 
         } else {
-            if(trial.getIsGuiltyVerdict()) {
+            if(!trial.getIsGuiltyVerdict()) {
                 String broadcast = trial.getDefendant().getPlayer().getDisplayName() +
                         " has been found INNOCENT and has been released.";
                 Bukkit.getServer().broadcastMessage(broadcast);

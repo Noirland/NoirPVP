@@ -151,6 +151,11 @@ public class PVPPlayer {
         lastConviction = LocalDateTime.now();
     }
 
+    public void findInnocent() {
+        legalState = LegalState.INNOCENT;
+        crimeMarks -= 5;
+    }
+
     public void releaseFromJail() {
         legalState = LegalState.CLEAN;
     }
@@ -182,5 +187,15 @@ public class PVPPlayer {
         if(getPlayerByUUID(id) == null) {
             players.add(new PVPPlayer(id));
         }
+    }
+
+    public static List<PVPPlayer> getTopCriminals() {
+        Collections.sort(players, Comparator.comparingInt(PVPPlayer::getCrimeMarks));
+        List<PVPPlayer> playersCopy = new ArrayList<>();
+
+        for(int i = 0; i < 10 && i < players.size(); i++) {
+            playersCopy.add(players.get(i));
+        }
+        return playersCopy;
     }
 }

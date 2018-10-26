@@ -1,5 +1,6 @@
 package com.github.margeobur.noirpvp;
 
+import com.github.margeobur.noirpvp.commands.JudicialCommands;
 import com.github.margeobur.noirpvp.listeners.PlayerCommandListener;
 import com.github.margeobur.noirpvp.listeners.PlayerDeathListener;
 import com.github.margeobur.noirpvp.listeners.PlayerServerListener;
@@ -34,6 +35,12 @@ public class NoirPVPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerCommandListener(), this);
         getServer().getPluginManager().registerEvents(new TrialEventListener(), this);
+
+        JudicialCommands commandHandler = new JudicialCommands();
+        this.getCommand("innocent").setExecutor(commandHandler);
+        this.getCommand("guilty").setExecutor(commandHandler);
+        this.getCommand("crime").setExecutor(commandHandler);
+        //this.getCommand("jail").setExecutor(commandHandler);
     }
     @Override
     public void onDisable() { }
