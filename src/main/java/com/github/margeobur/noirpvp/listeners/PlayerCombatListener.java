@@ -1,5 +1,6 @@
 package com.github.margeobur.noirpvp.listeners;
 
+import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.PVPPlayer;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
@@ -23,10 +24,6 @@ import org.bukkit.projectiles.ProjectileSource;
  * Listens to and handles events directly related to PVP combat that has yet to result in a fatality.
  */
 public class PlayerCombatListener implements Listener {
-
-    private final String CLAIM_DENY_MESSAGE = ChatColor.RED + "You can't hurt a player in a claim.";
-    private final String PROTECTED_DENY_MESSAGE = ChatColor.RED + "That player has a PVP cooldown";
-    private final String SELF_COOLDOWN_DENY_MESSAGE = ChatColor.RED + "You have a PVP cooldown";
 
     private GriefPrevention gp;
 
@@ -67,7 +64,7 @@ public class PlayerCombatListener implements Listener {
             // Either player is standing in a claim.
             if(isWrongDamageType(event.getCause())) {
                 event.setCancelled(true);
-                attacker.sendMessage(CLAIM_DENY_MESSAGE);
+                attacker.sendMessage(NoirPVPConfig.CLAIM_DENY_MESSAGE);
                 return;
             }
         }
@@ -75,13 +72,13 @@ public class PlayerCombatListener implements Listener {
         PVPPlayer victimPVP = PVPPlayer.getPlayerByUUID(victim.getUniqueId());
         if(!victimPVP.canBeHurt()) {
             event.setCancelled(true);
-            attacker.sendMessage(PROTECTED_DENY_MESSAGE);
+            attacker.sendMessage(NoirPVPConfig.PROTECTED_DENY_MESSAGE);
             return;
         }
         PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(attacker.getUniqueId());
         if(!attackerPVP.canBeHurt()) {
             event.setCancelled(true);
-            attacker.sendMessage(SELF_COOLDOWN_DENY_MESSAGE);
+            attacker.sendMessage(NoirPVPConfig.SELF_COOLDOWN_DENY_MESSAGE);
             return;
         }
 

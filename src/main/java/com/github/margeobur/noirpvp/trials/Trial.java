@@ -1,5 +1,6 @@
 package com.github.margeobur.noirpvp.trials;
 
+import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.PVPPlayer;
 import org.bukkit.Bukkit;
 
@@ -20,7 +21,6 @@ public class Trial {
     private LocalDateTime initiatedTime;
     private enum TrialState { PENDING, IN_PROGRESS, COMPLETED }
 
-    private final int CRIME_MARK_MULTIPLIER = 10;
     private int guiltyVotes = 0;
     private int innocentVotes = 0;
     private Map<UUID, Boolean> voteMap = new HashMap<>();
@@ -77,8 +77,8 @@ public class Trial {
         return isGuilty;
     }
 
-    public int getJailTimeMinutes() {
-        return (defendant.getCrimeMarks() / 5) * CRIME_MARK_MULTIPLIER;
+    public int getJailTimeSeconds() {
+        return (defendant.getCrimeMarks() / 5) * NoirPVPConfig.CRIME_MARK_MULTIPLIER * 60;
     }
 
     public boolean playerHasVoted(UUID voterID) {

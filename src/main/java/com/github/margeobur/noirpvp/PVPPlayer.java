@@ -70,7 +70,6 @@ public class PVPPlayer {
     }
 
     public void doDeath() {
-        System.out.println("Player died, old state is: " + deathState.name());
         lastDeath = LocalDateTime.now();
         updateState();
         if(deathState.equals(DeathState.CLEAR)) {
@@ -78,7 +77,6 @@ public class PVPPlayer {
         } else if(deathState.equals(DeathState.COOLDOWN)) {
             deathState = DeathState.PROTECTED_COOLDOWN;
         }
-        System.out.println("\t new state is: " + deathState.name());
     }
 
     /*
@@ -90,9 +88,9 @@ public class PVPPlayer {
             return;     // we must be CLEAR
         }
         LocalDateTime currentTime = LocalDateTime.now();
-        LocalDateTime protectionDeactivation = lastDeath.plusSeconds(NoirPVPPlugin.PROTECTION_DURATION);
-        LocalDateTime coolDownDeactivation = lastDeath.plusSeconds(NoirPVPPlugin.COOLDOWN_DURATION);
-        LocalDateTime doubleDeathDeactivation = lastDeath.plusSeconds(NoirPVPPlugin.DOUBLE_PROTECTION_DURATION);
+        LocalDateTime protectionDeactivation = lastDeath.plusSeconds(NoirPVPConfig.PROTECTION_DURATION);
+        LocalDateTime coolDownDeactivation = lastDeath.plusSeconds(NoirPVPConfig.COOLDOWN_DURATION);
+        LocalDateTime doubleDeathDeactivation = lastDeath.plusSeconds(NoirPVPConfig.DOUBLE_PROTECTION_DURATION);
 
         if(deathState.equals(DeathState.PROTECTED)) {
             if(currentTime.isAfter(protectionDeactivation) && currentTime.isBefore(coolDownDeactivation)) {

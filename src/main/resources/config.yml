@@ -1,0 +1,27 @@
+############################################################
+# +------------------------------------------------------+ #
+# |                   NoirPVP Config                     | #
+# +------------------------------------------------------+ #
+############################################################
+
+# The following durations are all in seconds
+
+# sets the time for which a player is protected the first time they get killed in PVP
+first-protection-duration: 30
+
+# sets the time a player must not be in PVP for after dying in PVP, in order for their status to reset
+# (if they go this long or longer without PVPing and then die again, they won't be blocked from using /back)
+cooldown-duration: 300
+
+# sets the time for which a player is protected and blocked from using /back
+# after the second time they get killed in PVP
+second-protection-duration: 120
+
+# The following three values should be self-explanatory - setting messages for players
+
+claim-deny-message: "§cYou can't hurt a player in a claim."
+protected-deny-message: "§cThat player has a PVP cooldown"
+self-protected-deny-message: "§cYou have a PVP cooldown"
+
+# the number of minutes spent in jail per FIVE crime marks, if convicted guilty
+crime-mark-multiplier: 10

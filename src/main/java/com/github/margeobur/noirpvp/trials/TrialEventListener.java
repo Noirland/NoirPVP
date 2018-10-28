@@ -1,8 +1,8 @@
 package com.github.margeobur.noirpvp.trials;
 
 import com.github.margeobur.noirpvp.PVPPlayer;
+import com.github.margeobur.noirpvp.tools.DelayedMessager;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -60,20 +60,7 @@ public class TrialEventListener implements Listener {
                         " has been found INNOCENT and has been released.";
                 Bukkit.getServer().broadcastMessage(broadcast);
             } else {
-                int minutes = trial.getJailTimeMinutes();
-                int hours = minutes / 60;
-                minutes = minutes % 60;
-
-                String timeStr = "";
-                if(hours == 1) {
-                    timeStr = "1 hour";
-                } else if(hours > 1) {
-                    timeStr = hours + " hours";
-                }
-
-                if(minutes > 0) {
-                    timeStr = timeStr + minutes + " minutes";
-                }
+                String timeStr = DelayedMessager.formatTimeString(trial.getJailTimeSeconds() * 60);
 
                 String broadcast = trial.getDefendant().getPlayer().getDisplayName() +
                         " has been found GUILTY and will spend " + timeStr + " in jail.";

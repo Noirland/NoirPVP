@@ -1,5 +1,6 @@
 package com.github.margeobur.noirpvp.listeners;
 
+import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.PVPPlayer;
 import com.github.margeobur.noirpvp.tools.DelayedMessager;
@@ -56,9 +57,9 @@ public class PlayerDeathListener implements Listener {
 
         DelayedMessager messager = new DelayedMessager();
         if(playerInfo.canBack()) {
-            messager.scheduleMessage(event.getEntity(), PLAYER_PROTECTION_END, NoirPVPPlugin.PROTECTION_DURATION);
+            messager.scheduleMessage(event.getEntity(), PLAYER_PROTECTION_END, NoirPVPConfig.PROTECTION_DURATION);
         } else {
-            messager.scheduleMessage(event.getEntity(), PLAYER_COOLDOWN_END, NoirPVPPlugin.COOLDOWN_DURATION);
+            messager.scheduleMessage(event.getEntity(), PLAYER_COOLDOWN_END, NoirPVPConfig.COOLDOWN_DURATION);
         }
     }
 }

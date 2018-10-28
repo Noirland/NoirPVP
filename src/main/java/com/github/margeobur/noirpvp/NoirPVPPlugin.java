@@ -17,16 +17,17 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class NoirPVPPlugin extends JavaPlugin {
 
-    public static final int PROTECTION_DURATION = 10;
-    public static final int COOLDOWN_DURATION = 30;
-    public static final int DOUBLE_PROTECTION_DURATION = 20;
+    private static NoirPVPPlugin instance;
 
     public static NoirPVPPlugin getPlugin() {
-        return (NoirPVPPlugin) Bukkit.getPluginManager().getPlugin("NoirPVP");
+        return instance;
     }
 
     @Override
     public void onEnable() {
+        instance = this;
+
+        NoirPVPConfig.initConfig();
         GriefPrevention gp = (GriefPrevention) Bukkit.getPluginManager().getPlugin("GriefPrevention");
 
         // ---------- listeners ----------
