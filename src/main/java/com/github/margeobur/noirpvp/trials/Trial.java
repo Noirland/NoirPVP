@@ -17,7 +17,7 @@ public class Trial {
 
     private PVPPlayer defendant;
 
-    private Set<PVPPlayer> victims;
+    private Set<UUID> victims;
     private LocalDateTime initiatedTime;
     private enum TrialState { PENDING, IN_PROGRESS, COMPLETED }
 
@@ -49,7 +49,7 @@ public class Trial {
         return defendant;
     }
 
-    public Set<PVPPlayer> getVictims() {
+    public Set<UUID> getVictims() {
         return victims;
     }
 

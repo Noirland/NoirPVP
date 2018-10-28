@@ -11,6 +11,8 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.logging.Level;
+
 /**
  * The NoirPVP plugin class. Here you'll find command and event registration, initialisation of
  * database and config, etc...
@@ -42,7 +44,13 @@ public class NoirPVPPlugin extends JavaPlugin {
         this.getCommand("guilty").setExecutor(commandHandler);
         this.getCommand("crime").setExecutor(commandHandler);
         //this.getCommand("jail").setExecutor(commandHandler);
+
+        System.out.println("something here");
+        getLogger().log(Level.FINE, "trying something out");
+        System.out.println(FSDatabase.getInstance().getDatabase());
     }
     @Override
-    public void onDisable() { }
+    public void onDisable() {
+        FSDatabase.getInstance().saveDatabase();
+    }
 }

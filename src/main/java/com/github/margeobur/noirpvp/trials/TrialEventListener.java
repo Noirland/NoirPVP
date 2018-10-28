@@ -3,11 +3,14 @@ package com.github.margeobur.noirpvp.trials;
 import com.github.margeobur.noirpvp.PVPPlayer;
 import com.github.margeobur.noirpvp.tools.DelayedMessager;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * The purpose of this class is to respond to trial events and perform all the necessary actions.
@@ -26,19 +29,26 @@ public class TrialEventListener implements Listener {
                     .append(" is on trial for the murder of ");
 
             int i = 0;
-            Set<PVPPlayer> victims = trial.getVictims();
-            Iterator<PVPPlayer> iter = victims.iterator();
+            Set<UUID> victimIDs = trial.getVictims();
+            Set<Player> victims = new HashSet<>();
+            for(UUID id: victimIDs) {
+                Player player = Bukkit.getPlayer(id);
+                if(player != null) {
+                    victims.add(player);
+                }
+            }
 
+            Iterator<Player> iter = victims.iterator();
             if(!iter.hasNext()) {
                 return; // this should never happen
             }
 
-            PVPPlayer victim = iter.next();
+            Player victim = iter.next();
             for(; iter.hasNext(); victim = iter.next()) {
                 if(i == NUM_NAMES_DISPLAYED || i == victims.size() - 1) {
                     break;
                 }
-                broadcast.append(victim.getPlayer().getDisplayName()).append(", ");
+                broadcast.append(victim.getDisplayName()).append(", ");
                 i++;
             }
 

@@ -57,9 +57,9 @@ public class PlayerDeathListener implements Listener {
 
         DelayedMessager messager = new DelayedMessager();
         if(playerInfo.canBack()) {
-            messager.scheduleMessage(event.getEntity(), PLAYER_PROTECTION_END, NoirPVPConfig.PROTECTION_DURATION);
+            messager.scheduleMessage(event.getEntity(), PLAYER_PROTECTION_END, NoirPVPConfig.PROTECTION_DURATION * 20);
         } else {
-            messager.scheduleMessage(event.getEntity(), PLAYER_COOLDOWN_END, NoirPVPConfig.COOLDOWN_DURATION);
+            messager.scheduleMessage(event.getEntity(), PLAYER_COOLDOWN_END, NoirPVPConfig.COOLDOWN_DURATION * 20);
         }
     }
 }

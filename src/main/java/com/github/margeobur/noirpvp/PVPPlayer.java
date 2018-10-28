@@ -2,6 +2,8 @@ package com.github.margeobur.noirpvp;
 
 import com.github.margeobur.noirpvp.trials.TrialManager;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.entity.Player;
 
 import java.time.LocalDateTime;
@@ -15,7 +17,8 @@ import java.util.*;
  * the status of a player's ability to do PVP, and will notify the PVPPlayer every time a player dies or does PVP so that
  * this class can update the player's state.
  */
-public class PVPPlayer {
+@SerializableAs("PVPPlayer")
+public class PVPPlayer implements ConfigurationSerializable {
 
     // The list of all players on the server
     private static ArrayList<PVPPlayer> players = new ArrayList<>();
@@ -25,12 +28,11 @@ public class PVPPlayer {
     private boolean lastDamagePVP = false;
     private LocalDateTime lastPVP;
     private LocalDateTime lastDeath;
-
     private enum DeathState { CLEAR, PROTECTED, COOLDOWN, PROTECTED_COOLDOWN } // used in determining whether the user can /back atm
     private DeathState deathState = DeathState.CLEAR;
 
     private int crimeMarks = 0;
-    private Set<PVPPlayer> victims = new HashSet<>();
+    private Set<UUID> victims = new HashSet<>();
     private enum LegalState { CLEAN, INNOCENT, GUILTY }
     private LegalState legalState;
     private LocalDateTime lastConviction;
@@ -138,7 +140,7 @@ public class PVPPlayer {
      */
     public void doMurder(PVPPlayer victim) {
         crimeMarks++;
-        victims.add(victim);
+        victims.add(victim.playerID);
         if(crimeMarks % 5 == 0) {
             TrialManager.getInstance().dispatchNewTrial(this);
         }
@@ -161,8 +163,8 @@ public class PVPPlayer {
     /**
      * Returns a copy of the set of victims
      */
-    public Set<PVPPlayer> getVictims() {
-        Set<PVPPlayer> victimsCopy = new HashSet<>(victims);
+    public Set<UUID> getVictims() {
+        Set<UUID> victimsCopy = new HashSet<>(victims);
         return victimsCopy;
     }
 
@@ -170,7 +172,63 @@ public class PVPPlayer {
         return crimeMarks;
     }
 
-    /* Managing the static collection of players */
+    /* ---------- Serialisation and Deserialisation ---------- */
+
+    public PVPPlayer(Map<String, Object> serialMap) {
+
+        if(serialMap.containsKey("playerID")) { playerID = UUID.fromString((String) serialMap.get("playerID")); }
+        if(serialMap.containsKey("lastDamagePVP")) { lastDamagePVP = (Boolean) serialMap.get("lastDamagePVP"); }
+        if(serialMap.containsKey("lastPVP")) { lastPVP = LocalDateTime.parse((String) serialMap.get("lastPVP")); }
+        if(serialMap.containsKey("lastDeath")) { lastDeath = LocalDateTime.parse((String) serialMap.get("lastPVP")); }
+        if(serialMap.containsKey("deathState")) { deathState = DeathState.valueOf((String) serialMap.get("deathState")); }
+
+        if(serialMap.containsKey("crimeMarks")) { crimeMarks = (Integer) serialMap.get("crimeMarks"); }
+        if(serialMap.containsKey("victims")) {
+            List<String> victimIDs = (List<String>) serialMap.get("victims");
+
+            for(String victimID: victimIDs) {
+                UUID actualID = UUID.fromString(victimID);
+                victims.add(actualID);
+            }
+        }
+
+        if(serialMap.containsKey("legalState")) { legalState = LegalState.valueOf((String) serialMap.get("legalState")); }
+        if(serialMap.containsKey("lastConviction")) { lastConviction = LocalDateTime.parse((String) serialMap.get("lastConviction")); }
+
+    }
+
+    @Override
+    public Map<String, Object> serialize() {
+        Map<String, Object> serialMap = new HashMap<>();
+
+        if(playerID != null)
+            serialMap.put("playerID", playerID.toString());
+            serialMap.put("lastDamagePVP", lastDamagePVP);
+        if(lastPVP != null)
+            serialMap.put("lastPVP", lastPVP.toString());
+        if(lastDeath != null)
+            serialMap.put("lastDeath", lastDeath.toString());
+        if(deathState != null)
+        serialMap.put("deathState", deathState.name());
+
+
+        serialMap.put("crimeMarks", crimeMarks);
+        List<String> victimIDs = new ArrayList<>();
+        if(!(victims == null || victims.isEmpty())) {
+            for(UUID victimID: victims) {
+                victimIDs.add(victimID.toString());
+            }
+        }
+
+        if(legalState != null)
+            serialMap.put("legalState", legalState.name());
+        if(lastConviction != null)
+            serialMap.put("lastConviction", lastConviction.toString());
+
+        return serialMap;
+    }
+
+    /* ---------- Managing the static collection of players ---------- */
 
     public static PVPPlayer getPlayerByUUID(UUID id) {
         for(PVPPlayer player: players) {
@@ -183,7 +241,19 @@ public class PVPPlayer {
 
     public static void addIfNotPresent(UUID id) {
         if(getPlayerByUUID(id) == null) {
-            players.add(new PVPPlayer(id));
+            PVPPlayer player = FSDatabase.getInstance().getPlayerPVPbyUUID(id);
+            if(player == null) {
+                players.add(new PVPPlayer(id));
+            } else {
+                players.add(player);
+            }
+        }
+    }
+
+    public static void removePlayer(UUID id) {
+        PVPPlayer player = getPlayerByUUID(id);
+        if(player != null) {
+            players.remove(player);
         }
     }
 
