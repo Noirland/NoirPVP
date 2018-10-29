@@ -1,11 +1,14 @@
 package com.github.margeobur.noirpvp;
 
+import com.github.margeobur.noirpvp.tools.DelayedMessager;
 import com.github.margeobur.noirpvp.trials.TrialManager;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -30,6 +33,11 @@ public class PVPPlayer implements ConfigurationSerializable {
     private LocalDateTime lastDeath;
     private enum DeathState { CLEAR, PROTECTED, COOLDOWN, PROTECTED_COOLDOWN } // used in determining whether the user can /back atm
     private DeathState deathState = DeathState.CLEAR;
+
+    private BukkitRunnable lastMessageTask;
+    private LocalDateTime logOffTime;
+    private LocalDateTime logOnTime;
+    private long secondsLoggedOff;
 
     private int crimeMarks = 0;
     private Set<UUID> victims = new HashSet<>();
@@ -79,6 +87,16 @@ public class PVPPlayer implements ConfigurationSerializable {
         } else if(deathState.equals(DeathState.COOLDOWN)) {
             deathState = DeathState.PROTECTED_COOLDOWN;
         }
+
+        Player player = Bukkit.getPlayer(playerID);
+        DelayedMessager messager = new DelayedMessager();
+        if(canBack()) {
+            lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_PROTECTION_END,
+                    NoirPVPConfig.PROTECTION_DURATION);
+        } else {
+            lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_DOUBLE_END,
+                    NoirPVPConfig.DOUBLE_PROTECTION_DURATION);
+        }
     }
 
     /*
@@ -90,25 +108,61 @@ public class PVPPlayer implements ConfigurationSerializable {
             return;     // we must be CLEAR
         }
         LocalDateTime currentTime = LocalDateTime.now();
-        LocalDateTime protectionDeactivation = lastDeath.plusSeconds(NoirPVPConfig.PROTECTION_DURATION);
-        LocalDateTime coolDownDeactivation = lastDeath.plusSeconds(NoirPVPConfig.COOLDOWN_DURATION);
-        LocalDateTime doubleDeathDeactivation = lastDeath.plusSeconds(NoirPVPConfig.DOUBLE_PROTECTION_DURATION);
+        LocalDateTime protectionDeactivation = lastDeath.plusSeconds(NoirPVPConfig.PROTECTION_DURATION + secondsLoggedOff);
+        LocalDateTime coolDownDeactivation = lastDeath.plusSeconds(NoirPVPConfig.COOLDOWN_DURATION + secondsLoggedOff);
+        LocalDateTime doubleDeathDeactivation = lastDeath.plusSeconds(NoirPVPConfig.DOUBLE_PROTECTION_DURATION + secondsLoggedOff);
 
         if(deathState.equals(DeathState.PROTECTED)) {
             if(currentTime.isAfter(protectionDeactivation) && currentTime.isBefore(coolDownDeactivation)) {
                 deathState = DeathState.COOLDOWN;
             } else if(currentTime.isAfter(coolDownDeactivation)) {
                 deathState = DeathState.CLEAR;
+                secondsLoggedOff = 0;
             } // otherwise still in PROTECTED state
         } else if(deathState.equals(DeathState.COOLDOWN)) {
             if(currentTime.isAfter(coolDownDeactivation)) {
                 deathState = DeathState.CLEAR;
+                secondsLoggedOff = 0;
             } // otherwise still in COOLDOWN state
         } else if(deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
             if(currentTime.isAfter(doubleDeathDeactivation)) {
                 deathState = DeathState.CLEAR;
+                secondsLoggedOff = 0;
             }
         }   // if in CLEAR state then we will always remain CLEAR (we only leave it via death in doDeath())
+    }
+
+    public void pauseCooldowns() {
+        if(lastMessageTask != null) {
+            lastMessageTask.cancel();
+        }
+        logOffTime = LocalDateTime.now();
+    }
+
+    public void resumeCooldowns() {
+        logOnTime = LocalDateTime.now();
+        if(logOffTime == null || lastDeath == null) {
+            return;
+        }
+        Duration timeLoggedOff = Duration.between(logOnTime, logOffTime);
+        secondsLoggedOff = Math.abs(timeLoggedOff.getSeconds());
+
+        Duration timeBetweenDeathLogoff = Duration.between(lastDeath, logOffTime);
+        long secondsBetweenDeathLogoff = Math.abs(timeBetweenDeathLogoff.getSeconds());
+
+        Player player = Bukkit.getPlayer(playerID);
+        DelayedMessager messager = new DelayedMessager();
+        if(canBack()) {
+            if(secondsBetweenDeathLogoff < NoirPVPConfig.PROTECTION_DURATION) {
+                int remainingTime = Math.abs((int) secondsBetweenDeathLogoff - NoirPVPConfig.PROTECTION_DURATION);
+                lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_PROTECTION_END, remainingTime);
+            }
+        } else {
+            if(secondsBetweenDeathLogoff < NoirPVPConfig.DOUBLE_PROTECTION_DURATION) {
+                int remainingTime = Math.abs((int) secondsBetweenDeathLogoff - NoirPVPConfig.DOUBLE_PROTECTION_DURATION);
+                lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_DOUBLE_END, remainingTime);
+            }
+        }
     }
 
     /**
@@ -172,6 +226,10 @@ public class PVPPlayer implements ConfigurationSerializable {
         return crimeMarks;
     }
 
+    public void jail() {
+
+    }
+
     /* ---------- Serialisation and Deserialisation ---------- */
 
     public PVPPlayer(Map<String, Object> serialMap) {
@@ -181,6 +239,7 @@ public class PVPPlayer implements ConfigurationSerializable {
         if(serialMap.containsKey("lastPVP")) { lastPVP = LocalDateTime.parse((String) serialMap.get("lastPVP")); }
         if(serialMap.containsKey("lastDeath")) { lastDeath = LocalDateTime.parse((String) serialMap.get("lastPVP")); }
         if(serialMap.containsKey("deathState")) { deathState = DeathState.valueOf((String) serialMap.get("deathState")); }
+        if(serialMap.containsKey("logOffTime")) { logOffTime = LocalDateTime.parse((String) serialMap.get("logOffTime")); }
 
         if(serialMap.containsKey("crimeMarks")) { crimeMarks = (Integer) serialMap.get("crimeMarks"); }
         if(serialMap.containsKey("victims")) {
@@ -203,14 +262,15 @@ public class PVPPlayer implements ConfigurationSerializable {
 
         if(playerID != null)
             serialMap.put("playerID", playerID.toString());
-            serialMap.put("lastDamagePVP", lastDamagePVP);
+        serialMap.put("lastDamagePVP", lastDamagePVP);
         if(lastPVP != null)
             serialMap.put("lastPVP", lastPVP.toString());
         if(lastDeath != null)
             serialMap.put("lastDeath", lastDeath.toString());
         if(deathState != null)
-        serialMap.put("deathState", deathState.name());
-
+            serialMap.put("deathState", deathState.name());
+        if(logOffTime != null)
+            serialMap.put("logOffTime", logOffTime.toString());
 
         serialMap.put("crimeMarks", crimeMarks);
         List<String> victimIDs = new ArrayList<>();

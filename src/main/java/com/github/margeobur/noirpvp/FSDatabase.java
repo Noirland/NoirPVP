@@ -98,7 +98,6 @@ public class FSDatabase {
             return;
         }
         try {
-            System.out.println("saving the database into file " + databaseFile);
             getDatabase().save(databaseFile);
         } catch (IOException ex) {
             NoirPVPPlugin.getPlugin().getLogger().log(Level.SEVERE, "Could not save config to " + databaseFile, ex);

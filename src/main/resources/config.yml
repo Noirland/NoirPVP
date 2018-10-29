@@ -17,6 +17,9 @@ cooldown-duration: 300
 # after the second time they get killed in PVP
 second-protection-duration: 120
 
+# sets the duration of trials (the voting period)
+trial-duration: 60
+
 # The following three values should be self-explanatory - setting messages for players
 
 claim-deny-message: "§cYou can't hurt a player in a claim."

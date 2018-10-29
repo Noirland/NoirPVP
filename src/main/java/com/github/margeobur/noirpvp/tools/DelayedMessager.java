@@ -9,11 +9,12 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class DelayedMessager {
 
-    public void scheduleMessage(Player player, String message, int seconds) {
+    public BukkitRunnable scheduleMessage(Player player, String message, int seconds) {
         int ticks = seconds * 20;
 
         SendMessageTask task = new SendMessageTask(player, message);
         task.runTaskLater(NoirPVPPlugin.getPlugin(), ticks);
+        return task;
     }
 
     private class SendMessageTask extends BukkitRunnable {

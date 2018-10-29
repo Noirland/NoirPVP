@@ -1,6 +1,8 @@
 package com.github.margeobur.noirpvp.listeners;
 
+import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.PVPPlayer;
+import com.github.margeobur.noirpvp.tools.DelayedMessager;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
@@ -21,7 +23,8 @@ public class PlayerCommandListener implements Listener {
         PVPPlayer playerInfo = PVPPlayer.getPlayerByUUID(event.getPlayer().getUniqueId());
 
         if(playerInfo != null && !playerInfo.canBack()) {
-            event.getPlayer().sendMessage("You cannot use /back for 20 seconds after dying twice in PVP.");
+            event.getPlayer().sendMessage("You cannot use /back for "
+                    + DelayedMessager.formatTimeString(NoirPVPConfig.DOUBLE_PROTECTION_DURATION) + " after dying twice in PVP.");
             event.setCancelled(true);
         }
     }

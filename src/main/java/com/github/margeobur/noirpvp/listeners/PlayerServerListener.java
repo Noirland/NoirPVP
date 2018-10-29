@@ -10,6 +10,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.UUID;
+
 /**
  * Responsible for initiating the loading of player data into memory, as well as the saving of player data
  * to the disk.
@@ -23,17 +25,21 @@ public class PlayerServerListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
+        UUID playerID = event.getPlayer().getUniqueId();
         // addIfNotPresent makes a call to FSDatabase#getPlayerPVPbyUUID if it needs to
-        PVPPlayer.addIfNotPresent(event.getPlayer().getUniqueId());
+        PVPPlayer.addIfNotPresent(playerID);
+        PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(playerID);
+        playerPVP.resumeCooldowns();
     }
 
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(player.getUniqueId());
+
+        playerPVP.pauseCooldowns();
+
         FSDatabase.getInstance().savePlayerPVP(playerPVP);
-
-
         BukkitRunnable runInfoDel = new BukkitRunnable() {
             @Override
             public void run() {

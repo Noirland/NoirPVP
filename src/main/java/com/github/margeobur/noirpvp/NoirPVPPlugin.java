@@ -1,5 +1,6 @@
 package com.github.margeobur.noirpvp;
 
+import com.github.margeobur.noirpvp.commands.AdminCommands;
 import com.github.margeobur.noirpvp.commands.JudicialCommands;
 import com.github.margeobur.noirpvp.listeners.PlayerCommandListener;
 import com.github.margeobur.noirpvp.listeners.PlayerDeathListener;
@@ -29,7 +30,7 @@ public class NoirPVPPlugin extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
-        NoirPVPConfig.initConfig();
+        NoirPVPConfig.getInstance().initConfig();
         GriefPrevention gp = (GriefPrevention) Bukkit.getPluginManager().getPlugin("GriefPrevention");
 
         // ---------- listeners ----------
@@ -40,14 +41,13 @@ public class NoirPVPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new TrialEventListener(), this);
 
         JudicialCommands commandHandler = new JudicialCommands();
-        this.getCommand("innocent").setExecutor(commandHandler);
-        this.getCommand("guilty").setExecutor(commandHandler);
-        this.getCommand("crime").setExecutor(commandHandler);
+        getCommand("innocent").setExecutor(commandHandler);
+        getCommand("guilty").setExecutor(commandHandler);
+        getCommand("crime").setExecutor(commandHandler);
+        AdminCommands adminCH = new AdminCommands();
+        getCommand("jail").setExecutor(adminCH);
+        getCommand("setdock").setExecutor(adminCH);
         //this.getCommand("jail").setExecutor(commandHandler);
-
-        System.out.println("something here");
-        getLogger().log(Level.FINE, "trying something out");
-        System.out.println(FSDatabase.getInstance().getDatabase());
     }
     @Override
     public void onDisable() {

@@ -35,6 +35,9 @@ public class Trial {
 
         defendant = attacker;
         victims = attacker.getVictims();
+
+        TrialEvent trialStartingEvent = new TrialEvent(TrialEvent.TrialEventType.INIT, this);
+        Bukkit.getServer().getPluginManager().callEvent(trialStartingEvent);
     }
 
     public boolean isInProgress() {
@@ -53,13 +56,13 @@ public class Trial {
         return victims;
     }
 
-    public void start() {
+    void start() {
         stateOfTrial = TrialState.IN_PROGRESS;
         TrialEvent trialStartingEvent = new TrialEvent(TrialEvent.TrialEventType.START, this);
         Bukkit.getServer().getPluginManager().callEvent(trialStartingEvent);
     }
 
-    public void end() {
+    void end() {
         stateOfTrial = TrialState.COMPLETED;
         isGuilty = guiltyVotes > innocentVotes;
 

@@ -19,9 +19,6 @@ import java.time.LocalDateTime;
  */
 public class PlayerDeathListener implements Listener {
 
-    private static final String PLAYER_PROTECTION_END = ChatColor.RED + "You are no longer protected from PVP";
-    private static final String PLAYER_COOLDOWN_END = ChatColor.RED + "You are no longer protected from PVP and may now use /back";
-
     /**
      * Listens for player deaths, determines if they are PVP related and handles them accordingly.
      * Any death < 5 seconds after a player damages another player is regarded as a PVP death.
@@ -46,6 +43,7 @@ public class PlayerDeathListener implements Listener {
     private void doPVPDeath(PlayerDeathEvent event, PVPPlayer playerInfo) {
         event.setKeepInventory(true);
         event.setKeepLevel(true);
+        // This will send a message to the player and update their state:
         playerInfo.doDeath();
 
         Player attacker = Bukkit.getPlayer(playerInfo.getLastAttackerID());
@@ -54,12 +52,5 @@ public class PlayerDeathListener implements Listener {
         PVPPlayer victimPVP = PVPPlayer.getPlayerByUUID(victim.getUniqueId());
 
         attackerPVP.doMurder(victimPVP);
-
-        DelayedMessager messager = new DelayedMessager();
-        if(playerInfo.canBack()) {
-            messager.scheduleMessage(event.getEntity(), PLAYER_PROTECTION_END, NoirPVPConfig.PROTECTION_DURATION * 20);
-        } else {
-            messager.scheduleMessage(event.getEntity(), PLAYER_COOLDOWN_END, NoirPVPConfig.COOLDOWN_DURATION * 20);
-        }
     }
 }

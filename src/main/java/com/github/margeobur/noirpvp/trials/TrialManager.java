@@ -1,12 +1,12 @@
 package com.github.margeobur.noirpvp.trials;
 
+import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.PVPPlayer;
+import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Singleton class that manages queuing and scheduling of Trials.
@@ -14,9 +14,6 @@ import java.util.UUID;
 public class TrialManager {
 
     private static TrialManager instance;
-    private TrialManager() {}
-
-    private static final int TRIAL_DURATION_SECS = 60;
     public enum VoteResult { NO_TRIAL , ALREADY_VOTED , NOT_ALLOWED, SUCCESS }
 
     private Deque<Trial> trials = new ArrayDeque<>();
@@ -28,11 +25,24 @@ public class TrialManager {
         return instance;
     }
 
-    public void dispatchNewTrial(PVPPlayer _attacker) {
-        Trial newTrial = new Trial(_attacker);
+    private TrialManager() { }
+
+    public void dispatchNewTrial(PVPPlayer attacker) {
+        Trial newTrial = new Trial(attacker);
         trials.addLast(newTrial);
-        tryDoNextTrial();
+
+        // Try start the trial after a 5 second wait period
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                tryDoNextTrial();
+            }
+        }.runTaskLater(NoirPVPPlugin.getPlugin(), 5 * 20);
     }
+
+//    public void jailPlayer(PVPPlayer player) {
+//
+//    }
 
     private void tryDoNextTrial() {
         if(trials.isEmpty()) {
@@ -63,7 +73,7 @@ public class TrialManager {
             }
         };
 
-        int durationInTicks = 20 * TRIAL_DURATION_SECS;
+        int durationInTicks = 20 * NoirPVPConfig.TRIAL_DURATION;
         trialEndTask.runTaskLater(NoirPVPPlugin.getPlugin(), durationInTicks);
     }
 

@@ -18,7 +18,6 @@ import java.util.UUID;
  * <ul>
  *     <li>/innocent and /guilty,</li>
  *     <li>/crime, and</li>
- *     <li>/jail</li>
  * </ul>
  */
 public class JudicialCommands implements CommandExecutor {
@@ -26,7 +25,6 @@ public class JudicialCommands implements CommandExecutor {
     private static final String INNOCENT_COMMAND = "innocent";
     private static final String GUILTY_COMMAND = "guilty";
     private static final String CRIME_COMMAND = "crime";
-    private static final String JAIL_COMMAND = "jail";
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
