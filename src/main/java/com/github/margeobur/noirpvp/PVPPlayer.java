@@ -39,6 +39,7 @@ public class PVPPlayer implements ConfigurationSerializable {
     private LocalDateTime logOnTime;
     private long secondsLoggedOff;
 
+    private boolean lastHitCancelled;
     private int crimeMarks = 0;
     private Set<UUID> victims = new HashSet<>();
     private enum LegalState { CLEAN, INNOCENT, GUILTY }
@@ -70,6 +71,10 @@ public class PVPPlayer implements ConfigurationSerializable {
             attackerID = attacker;
         }
     }
+
+    public boolean lastHitWasCancelled() { return lastHitCancelled; }
+
+    public void setLastHitCancelled(boolean hitWasPVP) { lastHitCancelled = hitWasPVP; }
 
     public LocalDateTime getLastPVP() {
         return lastPVP;

@@ -6,7 +6,6 @@ import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.PlayerData;
 
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
@@ -38,8 +37,13 @@ public class PlayerCombatListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST)     // always have the last say, but ignore cancelled events
     public void onPlayerAttack(EntityDamageByEntityEvent event) {
+        if(event.getDamager() instanceof Player) {
+            PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(event.getDamager().getUniqueId());
+            attackerPVP.setLastHitCancelled(false);
+        }
+
         Player attacker;
-        // First, deal with the special case of projectiles
+        // Deal with the special case of projectiles
         if(event.getDamager() instanceof Projectile) {
             ProjectileSource source = ((Projectile) event.getDamager()).getShooter();
             if(!(source instanceof Player) ||
@@ -65,20 +69,23 @@ public class PlayerCombatListener implements Listener {
             if(isWrongDamageType(event.getCause())) {
                 event.setCancelled(true);
                 attacker.sendMessage(NoirPVPConfig.CLAIM_DENY_MESSAGE);
+                PVPPlayer.getPlayerByUUID(attacker.getUniqueId()).setLastHitCancelled(true);
                 return;
             }
         }
 
         PVPPlayer victimPVP = PVPPlayer.getPlayerByUUID(victim.getUniqueId());
+        PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(attacker.getUniqueId());
         if(!victimPVP.canBeHurt()) {
             event.setCancelled(true);
             attacker.sendMessage(NoirPVPConfig.PROTECTED_DENY_MESSAGE);
+            attackerPVP.setLastHitCancelled(true);
             return;
         }
-        PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(attacker.getUniqueId());
         if(!attackerPVP.canBeHurt()) {
             event.setCancelled(true);
             attacker.sendMessage(NoirPVPConfig.SELF_COOLDOWN_DENY_MESSAGE);
+            attackerPVP.setLastHitCancelled(true);
             return;
         }
 
@@ -108,6 +115,11 @@ public class PlayerCombatListener implements Listener {
         if(playerPVP.lastDamagePVP()) {
             if(isArmourOrWeapon(event.getItem(), player.getInventory())) {
                 event.setCancelled(true);
+            }
+        } else if(playerPVP.lastHitWasCancelled()){
+            if(event.getItem().equals(player.getInventory().getItemInMainHand())) {
+                event.setCancelled(true);
+                playerPVP.setLastHitCancelled(false);
             }
         }
     }
