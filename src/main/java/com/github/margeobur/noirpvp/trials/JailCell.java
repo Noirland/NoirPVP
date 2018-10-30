@@ -76,7 +76,11 @@ public class JailCell implements ConfigurationSerializable {
             }
             serialMap.put("occupants", occupantIDStrs);
         } else {
-            serialMap.put("singleOccupant", singleOccupant.toString());
+            if(singleOccupant != null) {
+                serialMap.put("singleOccupant", singleOccupant.toString());
+            } else {
+                serialMap.put("singleOccupant", null);
+            }
         }
         return serialMap;
     }

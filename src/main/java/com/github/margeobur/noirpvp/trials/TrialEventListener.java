@@ -1,6 +1,7 @@
 package com.github.margeobur.noirpvp.trials;
 
 import com.github.margeobur.noirpvp.NoirPVPConfig;
+import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.tools.DelayedMessager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -9,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * The purpose of this class is to respond to trial events and perform all the necessary actions.
@@ -21,89 +23,136 @@ public class TrialEventListener implements Listener {
     @EventHandler
     public void onTrialChange(TrialEvent event) {
         Trial trial = event.getTrial();
+        boolean isJailTrial = false;
+        JailTrial jTrial = null;
+        if(trial instanceof JailTrial) {
+            isJailTrial = true;
+            jTrial = (JailTrial) trial;
+        }
+        Player defendant = trial.getDefendant().getPlayer();
 
         if(event.getType().equals(TrialEvent.TrialEventType.INIT)) {
-            Player defendant = trial.getDefendant().getPlayer();
-            defendant.sendMessage("You have been put on trial for murder. " +
+            defendant.sendMessage("You have been put on trial. " +
                     "You may not leave until your trial has seen completion.");
 
             Location cellLocation = JailCell.getVacantCellFor(defendant.getUniqueId());
             defendant.teleport(cellLocation);
 
         } else if(event.getType().equals(TrialEvent.TrialEventType.START)) {
-            // Most of the code here simply serves the purpose of building the broadcast message
-            StringBuilder broadcast = new StringBuilder();
-            broadcast.append(trial.getDefendant().getPlayer().getDisplayName())
-                    .append(" is on trial for the murder of ");
-
-            // Get the names of all the players
-            Set<UUID> victimIDs = trial.getVictims();
-            List<String> victimNames = new ArrayList<>();
-            for(UUID id: victimIDs) {
-                Player player = Bukkit.getPlayer(id);
-                if (player != null) {
-                    victimNames.add(player.getDisplayName());
-                }
-            }
-
-            // We only want to display up to NUM_NAMES_DISPLAYED names, so that we don't have too long a message.
-            // Thus we step through an append names only until we have that many
-            String victimName = "";
-            for(int i = 0; i < victimNames.size();) {
-                victimName = victimNames.get(i);
-                if(i == NUM_NAMES_DISPLAYED || i == victimNames.size() - 1) {
-                    break;
-                }
-                broadcast.append(victimName).append(", ");
-                i++;
-            }
-
-            // Finish off the list of names depending on how many there were.
-            if(victimNames.size() == 0) {
-                broadcast.append("several. ");  // this should never happen
-            } else if(victimNames.size() == 1) {
-                broadcast.append(victimName).append(". ");
-            } else if(victimNames.size() > 1 && victimNames.size() <= NUM_NAMES_DISPLAYED) {
-                broadcast.append("and ").append(victimName).append(". ");
+            String broadcast;
+            if(isJailTrial) {
+                broadcast = buildJailMessage(jTrial);
             } else {
-                broadcast.append("and ").append(victimNames.size() - NUM_NAMES_DISPLAYED).append(" others. ");
+                broadcast = buildTrialMessage(trial);
             }
+            Bukkit.getServer().broadcastMessage(broadcast);
 
-            broadcast.append(trial.getDefendant().getCrimeMarks()).append(" counts all in all.");
-            broadcast.append(" Vote /guilty or /innocent now!");
-            Bukkit.getServer().broadcastMessage(broadcast.toString());
-
-            Player defendant = trial.getDefendant().getPlayer();
             JailCell.releasePlayer(defendant.getUniqueId());
             defendant.teleport(NoirPVPConfig.getInstance().getCourtDock());
 
         } else if(event.getType().equals(TrialEvent.TrialEventType.FINISH)) {
             if(!trial.getIsGuiltyVerdict()) {
+                if(trial == null) {
+                    NoirPVPPlugin.getPlugin().getLogger().log(Level.SEVERE, "trial is null");
+                    return;
+                } else if(trial.getDefendant() == null) {
+                    NoirPVPPlugin.getPlugin().getLogger().log(Level.SEVERE, "defendant is null");
+                    return;
+                } else if(trial.getDefendant().getPlayer() == null) {
+                    NoirPVPPlugin.getPlugin().getLogger().log(Level.SEVERE, "player is null");
+                    return;
+                }
                 String broadcast = trial.getDefendant().getPlayer().getDisplayName() +
                         " has been found INNOCENT and has been released.";
                 Bukkit.getServer().broadcastMessage(broadcast);
 
-                Player defendant = trial.getDefendant().getPlayer();
                 Location releaseLocation = NoirPVPConfig.getInstance().getReleasePoint();
                 defendant.teleport(releaseLocation);
-            } else {
+            } else if(!isJailTrial || jTrial.getResult().equals(JailTrial.JailTrialResult.JAIL)) {
                 String timeStr = DelayedMessager.formatTimeString(trial.getJailTimeSeconds());
 
-                String broadcast = trial.getDefendant().getPlayer().getDisplayName() +
+                String broadcast = defendant.getDisplayName() +
                         " has been found GUILTY and will spend " + timeStr + " in jail.";
                 Bukkit.getServer().broadcastMessage(broadcast);
 
-                Player defendant = trial.getDefendant().getPlayer();
                 Location cellLocation = JailCell.getVacantCellFor(defendant.getUniqueId());
                 defendant.teleport(cellLocation);
+            } else if(isJailTrial) {
+                if(jTrial.getResult().equals(JailTrial.JailTrialResult.KICK)) {
+                    String broadcast = defendant.getDisplayName() +
+                            " has been found GUILTY and will be kicked.";
+                    Bukkit.getServer().broadcastMessage(broadcast);
+
+                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
+                            "kick " + defendant.getName() + jTrial.getReason());
+                } else if(jTrial.getResult().equals(JailTrial.JailTrialResult.BAN)) {
+                    String broadcast = defendant.getDisplayName() +
+                            " has been found GUILTY and will be banned.";
+                    Bukkit.getServer().broadcastMessage(broadcast);
+
+                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
+                            "ban " + defendant.getName() + jTrial.getReason());
+                }
             }
         } else if(event.getType().equals(TrialEvent.TrialEventType.RELEASE)) {
-            Player defendant = trial.getDefendant().getPlayer();
             defendant.sendMessage("You are free to go.");
 
             JailCell.releasePlayer(defendant.getUniqueId());
             defendant.teleport(NoirPVPConfig.getInstance().getReleasePoint());
         }
+    }
+
+    private String buildJailMessage(JailTrial trial) {
+        StringBuilder broadcast = new StringBuilder();
+        broadcast.append(trial.getDefendant().getPlayer().getDisplayName())
+                .append(" is on trial for the reason: ")
+                .append(trial.getReason());
+
+        broadcast.append(" Vote on the action that should be taken with /innocent, /jail, /kick or /ban.");
+        return broadcast.toString();
+    }
+
+    private String buildTrialMessage(Trial trial) {
+        StringBuilder broadcast = new StringBuilder();
+        broadcast.append(trial.getDefendant().getPlayer().getDisplayName())
+                .append(" is on trial for the murder of ");
+
+        // Get the names of all the players
+        Set<UUID> victimIDs = trial.getVictims();
+        List<String> victimNames = new ArrayList<>();
+        for(UUID id: victimIDs) {
+            Player player = Bukkit.getPlayer(id);
+            if (player != null) {
+                victimNames.add(player.getDisplayName());
+            }
+        }
+
+        // We only want to display up to NUM_NAMES_DISPLAYED names, so that we don't have too long a message.
+        // Thus we step through an append names only until we have that many
+        String victimName = "";
+        for(int i = 0; i < victimNames.size();) {
+            victimName = victimNames.get(i);
+            if(i == NUM_NAMES_DISPLAYED || i == victimNames.size() - 1) {
+                break;
+            }
+            broadcast.append(victimName).append(", ");
+            i++;
+        }
+
+        // Finish off the list of names depending on how many there were.
+        if(victimNames.size() == 0) {
+            broadcast.append("several. ");  // this should never happen
+        } else if(victimNames.size() == 1) {
+            broadcast.append(victimName).append(". ");
+        } else if(victimNames.size() > 1 && victimNames.size() <= NUM_NAMES_DISPLAYED) {
+            broadcast.append("and ").append(victimName).append(". ");
+        } else {
+            broadcast.append("and ").append(victimNames.size() - NUM_NAMES_DISPLAYED).append(" others. ");
+        }
+
+        broadcast.append(trial.getDefendant().getCrimeMarks()).append(" counts all in all.");
+        broadcast.append(" Vote /guilty or /innocent now!");
+        return broadcast.toString();
     }
 
 }

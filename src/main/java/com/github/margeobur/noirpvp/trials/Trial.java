@@ -15,11 +15,11 @@ import java.util.UUID;
  */
 public class Trial {
 
-    private PVPPlayer defendant;
+    protected PVPPlayer defendant;
 
     private Set<UUID> victims;
     private LocalDateTime initiatedTime;
-    private enum TrialState { PENDING, IN_PROGRESS, COMPLETED }
+    protected enum TrialState { PENDING, IN_PROGRESS, COMPLETED }
 
     private int guiltyVotes = 0;
     private int innocentVotes = 0;
@@ -72,16 +72,20 @@ public class Trial {
 
     void end() {
         stateOfTrial = TrialState.COMPLETED;
-        isGuilty = guiltyVotes > innocentVotes;
 
+        applyVerdict();
+
+        TrialEvent trialEndingEvent = new TrialEvent(TrialEvent.TrialEventType.FINISH, this);
+        Bukkit.getServer().getPluginManager().callEvent(trialEndingEvent);
+    }
+
+    void applyVerdict() {
+        isGuilty = guiltyVotes > innocentVotes;
         if(isGuilty) {
             defendant.findGuilty();
         } else {
             defendant.findInnocent();
         }
-
-        TrialEvent trialEndingEvent = new TrialEvent(TrialEvent.TrialEventType.FINISH, this);
-        Bukkit.getServer().getPluginManager().callEvent(trialEndingEvent);
     }
 
     void releasePlayer() {
@@ -97,7 +101,7 @@ public class Trial {
 
     public int getJailTimeSeconds() {
         return (defendant.getCrimeMarks() / 5) * NoirPVPConfig.CRIME_MARK_MULTIPLIER * 60;
-    }
+}
 
     public boolean playerHasVoted(UUID voterID) {
         return voteMap.containsKey(voterID);

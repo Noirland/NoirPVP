@@ -15,7 +15,7 @@ import java.util.*;
 public class TrialManager {
 
     private static TrialManager instance;
-    public enum VoteResult { NO_TRIAL , ALREADY_VOTED , NOT_ALLOWED, SUCCESS }
+    public enum VoteResult { NO_TRIAL, ALREADY_VOTED, NOT_ALLOWED, WRONG_TYPE, SUCCESS }
 
     private Deque<Trial> trials = new ArrayDeque<>();
     private List<Trial> releaseTrials = new ArrayList<>();
@@ -42,9 +42,17 @@ public class TrialManager {
         }.runTaskLater(NoirPVPPlugin.getPlugin(), 5 * 20);
     }
 
-//    public void jailPlayer(PVPPlayer player) {
-//
-//    }
+    public void dispatchNewJailTrial(PVPPlayer player, String reason) {
+        JailTrial newTrial = new JailTrial(player, reason);
+        trials.addLast(newTrial);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                tryDoNextTrial();
+            }
+        }.runTaskLater(NoirPVPPlugin.getPlugin(), 5 * 20);
+    }
 
     private void tryDoNextTrial() {
         if(trials.isEmpty()) {
@@ -100,6 +108,29 @@ public class TrialManager {
             return trials.peekFirst().getDefendant();
         }
         return null;
+    }
+
+    public VoteResult addVoteToJailTrial(UUID voterID, JailTrial.JailTrialResult vote) {
+        Trial cTrial = trials.peekFirst();
+        if(!(cTrial instanceof JailTrial)) {
+            return VoteResult.WRONG_TYPE;
+        }
+        JailTrial currentTrial = (JailTrial) cTrial;
+
+        if(currentTrial == null || !currentTrial.isInProgress()) {
+            return VoteResult.NO_TRIAL;
+        }
+
+        if(currentTrial.playerHasVoted(voterID)) {
+            return VoteResult.ALREADY_VOTED;
+        }
+
+        if(voterID.equals(currentTrial.getDefendant().getPlayer().getUniqueId())) {
+            return VoteResult.NOT_ALLOWED;
+        }
+
+        currentTrial.addVote(voterID, vote);
+        return VoteResult.SUCCESS;
     }
 
     public VoteResult addVoteToCurrentTrial(UUID voterID, boolean voteIsGuilty) {

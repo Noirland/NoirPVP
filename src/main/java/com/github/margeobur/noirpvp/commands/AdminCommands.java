@@ -2,7 +2,9 @@ package com.github.margeobur.noirpvp.commands;
 
 import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
+import com.github.margeobur.noirpvp.PVPPlayer;
 import com.github.margeobur.noirpvp.trials.JailCell;
+import com.github.margeobur.noirpvp.trials.JailTrial;
 import com.github.margeobur.noirpvp.trials.TrialManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -24,6 +26,8 @@ import java.util.UUID;
 public class AdminCommands implements CommandExecutor {
 
     private static final String JAIL_COMMAND = "jail";
+    private static final String BAN_COMMAND = "ban";
+    private static final String KICK_COMMAND = "kick";
     private static final String SET_DOCK_COMMAND = "setdock";
     private static final String SET_RELEASE_COMMAND = "setrelease";
 
@@ -35,9 +39,46 @@ public class AdminCommands implements CommandExecutor {
             return true;
         }
 
+        JailTrial.JailTrialResult vote = JailTrial.JailTrialResult.JAIL;
         switch(commandLabel) {
+            case BAN_COMMAND:
+                 vote = JailTrial.JailTrialResult.BAN;
+            case KICK_COMMAND:
+                if(commandLabel.equalsIgnoreCase(KICK_COMMAND)) {
+                    vote = JailTrial.JailTrialResult.KICK;
+                }
             case JAIL_COMMAND:
-                if(args.length == 1 && args[0].equals("addcell")) {
+                if(args.length == 0) {
+                    if(!(sender instanceof Player)) {
+                        sender.sendMessage("You must be a player to vote");
+                    }
+                    if(!sender.hasPermission("noirpvp.setlocations")) {
+                        sender.sendMessage("You do not have permission to use this command.");
+                        return true;
+                    }
+
+                    Player player = (Player) sender;
+
+                    TrialManager.VoteResult result = TrialManager.getInstance().addVoteToJailTrial(player.getUniqueId(),
+                            vote);
+                    switch (result) {
+                        case ALREADY_VOTED:
+                            player.sendMessage("You have already voted in this trial");
+                            break;
+                        case NO_TRIAL:
+                            player.sendMessage("There is not currently a trial in progress.");
+                            break;
+                        case NOT_ALLOWED:
+                            player.sendMessage("You are barred from voting in the current trial.");
+                            break;
+                        case SUCCESS:
+                            player.sendMessage("Your vote has been accepted and recorded.");
+                            break;
+                        case WRONG_TYPE:
+                            player.sendMessage("The current trial is not an admin-initiated trial");
+                            break;
+                    }
+                } else if(args.length == 1 && args[0].equals("addcell")) {
                     if(!(sender instanceof Player)) {
                         sender.sendMessage("You must use this command as a player so that the location can be found");
                     }
@@ -66,8 +107,9 @@ public class AdminCommands implements CommandExecutor {
                     for(int i = 1; i < args.length; i++) {
                         reasonSB.append(args[i]).append(" ");
                     }
-                    Location cell = JailCell.getVacantCellFor(thePlayer.getUniqueId());
-                    thePlayer.teleport(cell);
+
+                    PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(thePlayer.getUniqueId());
+                    TrialManager.getInstance().dispatchNewJailTrial(playerPVP, reasonSB.toString());
                     return true;
                 }
                 break;

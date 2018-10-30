@@ -43,7 +43,7 @@ public class PVPPlayer implements ConfigurationSerializable {
     private int crimeMarks = 0;
     private Set<UUID> victims = new HashSet<>();
     private enum LegalState { CLEAN, INNOCENT, GUILTY }
-    private LegalState legalState;
+    private LegalState legalState = LegalState.CLEAN;
     private LocalDateTime lastConviction;
     private long secondsAlreadyServed = 0;
 
@@ -110,6 +110,7 @@ public class PVPPlayer implements ConfigurationSerializable {
         the user dying.
      */
     private void updateState() {
+        //getPlayer().sendMessage("old state: " + deathState);
         if(lastDeath == null) {
             return;     // we must be CLEAR
         }
@@ -119,6 +120,7 @@ public class PVPPlayer implements ConfigurationSerializable {
         LocalDateTime doubleDeathDeactivation = lastDeath.plusSeconds(NoirPVPConfig.DOUBLE_PROTECTION_DURATION + secondsLoggedOff);
 
         if(deathState.equals(DeathState.PROTECTED)) {
+            //getPlayer().sendMessage("next PVP end " + protectionDeactivation.toString() + " seconds: " + secondsLoggedOff);
             if(currentTime.isAfter(protectionDeactivation) && currentTime.isBefore(coolDownDeactivation)) {
                 deathState = DeathState.COOLDOWN;
             } else if(currentTime.isAfter(coolDownDeactivation)) {
@@ -126,11 +128,13 @@ public class PVPPlayer implements ConfigurationSerializable {
                 secondsLoggedOff = 0;
             } // otherwise still in PROTECTED state
         } else if(deathState.equals(DeathState.COOLDOWN)) {
+            //getPlayer().sendMessage("next cooldown end " + coolDownDeactivation.toString() + " seconds: " + secondsLoggedOff);
             if(currentTime.isAfter(coolDownDeactivation)) {
                 deathState = DeathState.CLEAR;
                 secondsLoggedOff = 0;
             } // otherwise still in COOLDOWN state
         } else if(deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
+            //getPlayer().sendMessage("next backblock end " + doubleDeathDeactivation.toString() + " seconds: " + secondsLoggedOff);
             if(currentTime.isAfter(doubleDeathDeactivation)) {
                 deathState = DeathState.CLEAR;
                 secondsLoggedOff = 0;
@@ -138,6 +142,7 @@ public class PVPPlayer implements ConfigurationSerializable {
         } else { // if in CLEAR state then we will always remain CLEAR (we only leave it via death in doDeath())
             secondsLoggedOff = 0;
         }
+        //getPlayer().sendMessage("new state " + deathState);
     }
 
     public void pauseCooldowns() {
@@ -146,12 +151,13 @@ public class PVPPlayer implements ConfigurationSerializable {
         }
         logOffTime = LocalDateTime.now();
 
-        Duration timeOnline = Duration.between(logOnTime, logOffTime);
-        long secondsServedNow = Math.abs(timeOnline.getSeconds());
-        secondsAlreadyServed += secondsServedNow;
+            Duration timeOnline = Duration.between(logOnTime, logOffTime);
+            long secondsServedNow = Math.abs(timeOnline.getSeconds());
+            secondsAlreadyServed += secondsServedNow;
     }
 
     public void resumeCooldowns() {
+        //getPlayer().sendMessage("resuming state is " + deathState);
         logOnTime = LocalDateTime.now();
         if(logOffTime == null || lastDeath == null) {
             return;
@@ -351,5 +357,13 @@ public class PVPPlayer implements ConfigurationSerializable {
             playersCopy.add(players.get(i));
         }
         return playersCopy;
+    }
+
+    public static void pauseAllCooldowns() {
+        for(PVPPlayer player: players) {
+            if(player.getPlayer() != null && player.getPlayer().isOnline()) {
+                player.pauseCooldowns();
+            }
+        }
     }
 }

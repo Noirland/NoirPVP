@@ -78,11 +78,11 @@ public class PlayerServerListener implements Listener {
     public void onPlayerMove(PlayerMoveEvent event) {
         UUID playerID = event.getPlayer().getUniqueId();
         PVPPlayer possibleDefendant = TrialManager.getInstance().currentDefendant();
-        if(!JailCell.playerOnShortlist(playerID)) {
+//        if(!JailCell.playerOnShortlist(playerID)) {
             if(possibleDefendant == null || !possibleDefendant.getID().equals(playerID)) {
                 return;
             }
-        }
+//        }
 
         event.setCancelled(true);
     }

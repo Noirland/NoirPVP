@@ -21,7 +21,7 @@ import java.util.logging.Level;
 public class FSDatabase {
 
     private static final String dbFilename = "pvpPlayers.yml";
-    private static final int SAVE_PERIOD = 10;
+    private static final int SAVE_PERIOD = 5;
 
     private static FSDatabase instance;
     private FileConfiguration database = null;
