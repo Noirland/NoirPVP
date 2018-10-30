@@ -30,6 +30,9 @@ public class TrialEventListener implements Listener {
             jTrial = (JailTrial) trial;
         }
         Player defendant = trial.getDefendant().getPlayer();
+        if(defendant == null) {
+            return;
+        }
 
         if(event.getType().equals(TrialEvent.TrialEventType.INIT)) {
             defendant.sendMessage("You have been put on trial. " +
@@ -84,14 +87,14 @@ public class TrialEventListener implements Listener {
                     Bukkit.getServer().broadcastMessage(broadcast);
 
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
-                            "kick " + defendant.getName() + jTrial.getReason());
+                            "kick " + defendant.getName() + " " + jTrial.getReason());
                 } else if(jTrial.getResult().equals(JailTrial.JailTrialResult.BAN)) {
                     String broadcast = defendant.getDisplayName() +
                             " has been found GUILTY and will be banned.";
                     Bukkit.getServer().broadcastMessage(broadcast);
 
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
-                            "ban " + defendant.getName() + jTrial.getReason());
+                            "ban " + defendant.getName() + " " + jTrial.getReason());
                 }
             }
         } else if(event.getType().equals(TrialEvent.TrialEventType.RELEASE)) {

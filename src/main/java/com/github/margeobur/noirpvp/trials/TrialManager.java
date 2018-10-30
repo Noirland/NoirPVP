@@ -79,7 +79,10 @@ public class TrialManager {
                 Trial currentTrial = trials.peekFirst();
                 currentTrial.end();
                 trials.remove(currentTrial);
-                if(currentTrial.getIsGuiltyVerdict()) {
+                if((currentTrial instanceof JailTrial) &&
+                        ((JailTrial) currentTrial).getResult().equals(JailTrial.JailTrialResult.JAIL) ||
+                   !(currentTrial instanceof JailTrial) &&
+                        currentTrial.getIsGuiltyVerdict()) {
                     scheduleJailRelease(currentTrial, 0);
                 }
                 tryDoNextTrial();
@@ -98,8 +101,8 @@ public class TrialManager {
                 releaseTrials.remove(finishedTrial);
             }
         };
-
-        int delayInTicks = 20 * finishedTrial.getJailTimeSeconds() - alreadyServed;
+        
+        int delayInTicks = 20 * (finishedTrial.getJailTimeSeconds() - alreadyServed);
         jailReleaseTask.runTaskLater(NoirPVPPlugin.getPlugin(), delayInTicks);
     }
 
@@ -153,8 +156,9 @@ public class TrialManager {
 
     public void rescheduleTrialPotentially(UUID playerID) {
         JailCell.refreshJailShortlist();
-        List<UUID> convictIDs = JailCell.getJailShortlist();
-        for(UUID convictID: convictIDs) {
+        Map<UUID, Integer> convictIDs = JailCell.getJailShortlist();
+        Set<UUID> ids = convictIDs.keySet();
+        for(UUID convictID: ids) {
             if(convictID.equals(playerID)) { // should be unnecessary
                 PVPPlayer convictPVP = PVPPlayer.getPlayerByUUID(playerID);
                 if(convictPVP.lastLoggedOff() == null || !convictPVP.isJailed()) {
@@ -162,7 +166,12 @@ public class TrialManager {
                 }
 
                 LocalDateTime lastConviction = convictPVP.getLastConviction();
-                Trial finishedTrial = new Trial(convictPVP, lastConviction.minusMinutes(1));
+                Trial finishedTrial;
+                if(convictPVP.wasAdminJailed()) {
+                    finishedTrial = new JailTrial(convictPVP, "", lastConviction.minusMinutes(1));
+                } else {
+                    finishedTrial = new Trial(convictPVP, lastConviction.minusMinutes(1));
+                }
                 releaseTrials.add(finishedTrial);
 
                 scheduleJailRelease(finishedTrial, (int) convictPVP.getTimeAlreadyServed());

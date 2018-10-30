@@ -1,5 +1,6 @@
 package com.github.margeobur.noirpvp.trials;
 
+import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.PVPPlayer;
 
 import java.time.LocalDateTime;
@@ -45,9 +46,11 @@ public class JailTrial extends Trial {
         switch(maxInd) {
             case 0:
                 result = JailTrialResult.INNOCENT;
+                defendant.findInnocent(true);
                 break;
             case 1:
                 result = JailTrialResult.JAIL;
+                defendant.findGuilty(true);
                 break;
             case 2:
                 result = JailTrialResult.KICK;
@@ -71,6 +74,11 @@ public class JailTrial extends Trial {
     @Override
     public boolean getIsGuiltyVerdict() {
         return !result.equals(JailTrialResult.INNOCENT);
+    }
+
+    @Override
+    public int getJailTimeSeconds() {
+        return NoirPVPConfig.ADMIN_JAIL_TIME * 60;
     }
 
     public JailTrialResult getResult() {

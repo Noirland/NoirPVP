@@ -11,7 +11,7 @@ import java.util.*;
 public class JailCell implements ConfigurationSerializable {
 
     private static List<JailCell> jailCells = new ArrayList<>();   // says whether or not each cell is occupied
-    private static List<UUID> jailPlayerShortlist = new ArrayList<>();
+    private static Map<UUID, Integer> jailPlayerShortlist = new HashMap<>();
 
     private Location warp;
     private List<UUID> occupants = new ArrayList<>();
@@ -37,7 +37,10 @@ public class JailCell implements ConfigurationSerializable {
             }
         } else {
             if(serialMap.containsKey("singleOccupant")) {
-                singleOccupant = UUID.fromString((String) serialMap.get("singleOccupant"));
+                String uuidStr = (String) serialMap.get("singleOccupant");
+                if(uuidStr != null) {
+                    singleOccupant = UUID.fromString(uuidStr);
+                }
             }
         }
     }
@@ -48,14 +51,28 @@ public class JailCell implements ConfigurationSerializable {
 
     public static void refreshJailShortlist() {
         jailPlayerShortlist = FSDatabase.getInstance().getJailShortlist();
+//        Set<UUID> convictIDs = jailPlayerShortlist.keySet();
+//        for(UUID convict: convictIDs) {
+//            int index = jailPlayerShortlist.get(convict);
+//            if(index >= jailCells.size()) {
+//                index = 0;
+//            }
+//            JailCell cell = jailCells.get(index);
+//            if(cell.canHouseMany) {
+//                cell.occupants.add(convict);
+//            } else {
+//                cell.singleOccupant = convict;
+//            }
+//        }
     }
 
-    public static List<UUID> getJailShortlist() {
+    public static Map<UUID, Integer> getJailShortlist() {
         return jailPlayerShortlist;
     }
 
     public static boolean playerOnShortlist(UUID playerID) {
-        for(UUID id: jailPlayerShortlist) {
+        Set<UUID> players = jailPlayerShortlist.keySet();
+        for(UUID id: players) {
             if(id.equals(playerID)) {
                 return true;
             }
@@ -108,20 +125,23 @@ public class JailCell implements ConfigurationSerializable {
      * @return the {@link Location} to warp a player to when jailing them
      */
     public static Location getVacantCellFor(UUID playerID) {
-        jailPlayerShortlist.add(playerID);
+//        System.out.println("Adding " + playerID.toString() + " to the shortlist");
         for(JailCell cell: jailCells) {
              if(!cell.canHouseMany && cell.singleOccupant == null) {
                 cell.singleOccupant = playerID;
+                jailPlayerShortlist.put(playerID, jailCells.indexOf(cell));
                 return cell.warp;
             }
         }
         for(JailCell cell: jailCells) {
             if(cell.canHouseMany && cell.occupants.isEmpty()) {
                 cell.occupants.add(playerID);
+                jailPlayerShortlist.put(playerID, jailCells.indexOf(cell));
                 return cell.warp;
             }
         }
         jailCells.get(0).occupants.add(playerID);
+        jailPlayerShortlist.put(playerID, 0);
         return jailCells.get(0).warp;
     }
 
@@ -134,7 +154,7 @@ public class JailCell implements ConfigurationSerializable {
             if(cell.canHouseMany && cell.occupants.contains(playerId)) {
                 cell.occupants.remove(playerId);
                 return;
-            } else if(cell.singleOccupant.equals(playerId)) {
+            } else if(cell.singleOccupant != null && cell.singleOccupant.equals(playerId)) {
                 cell.singleOccupant = null;
                 return;
             }

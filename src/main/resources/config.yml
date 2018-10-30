@@ -28,3 +28,6 @@ self-protected-deny-message: "§cYou have a PVP cooldown"
 
 # the number of minutes spent in jail per FIVE crime marks, if convicted guilty
 crime-mark-multiplier: 10
+
+# the number of minutes a player spends in jail if they are found guilty from using /jail
+admin-init-jailtime: 3

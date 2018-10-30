@@ -27,6 +27,7 @@ public class NoirPVPConfig {
     public static int DOUBLE_PROTECTION_DURATION;
     public static int CRIME_MARK_MULTIPLIER = 10;
     public static int TRIAL_DURATION;
+    public static int ADMIN_JAIL_TIME;
 
     private Location courtDock;
     private Location releasePoint;
@@ -55,6 +56,7 @@ public class NoirPVPConfig {
         SELF_COOLDOWN_DENY_MESSAGE = config.getString("self-protected-deny-message");
 
         CRIME_MARK_MULTIPLIER = config.getInt("crime-mark-multiplier");
+        ADMIN_JAIL_TIME = config.getInt("admin-init-jailtime");
 
         if(config.contains("jail-locations")) {
             try {
@@ -76,6 +78,13 @@ public class NoirPVPConfig {
     public void addJailCell(Location cellLocation) {
         FileConfiguration config = NoirPVPPlugin.getPlugin().getConfig();
         JailCell.addNewCell(cellLocation);
+
+        config.set("jail-locations", JailCell.getCells());
+        NoirPVPPlugin.getPlugin().saveConfig();
+    }
+
+    public void saveCells() {
+        FileConfiguration config = NoirPVPPlugin.getPlugin().getConfig();
 
         config.set("jail-locations", JailCell.getCells());
         NoirPVPPlugin.getPlugin().saveConfig();

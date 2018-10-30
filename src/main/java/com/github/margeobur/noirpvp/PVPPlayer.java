@@ -46,6 +46,7 @@ public class PVPPlayer implements ConfigurationSerializable {
     private LegalState legalState = LegalState.CLEAN;
     private LocalDateTime lastConviction;
     private long secondsAlreadyServed = 0;
+    private boolean nonMurderConvict = false;
 
     public PVPPlayer(UUID playerID) {
         this.playerID = playerID;
@@ -151,9 +152,11 @@ public class PVPPlayer implements ConfigurationSerializable {
         }
         logOffTime = LocalDateTime.now();
 
+        if(isJailed()) {
             Duration timeOnline = Duration.between(logOnTime, logOffTime);
             long secondsServedNow = Math.abs(timeOnline.getSeconds());
             secondsAlreadyServed += secondsServedNow;
+        }
     }
 
     public void resumeCooldowns() {
@@ -222,12 +225,16 @@ public class PVPPlayer implements ConfigurationSerializable {
         }
     }
 
-    public void findGuilty() {
+    public void findGuilty(boolean nonMurder) {
+
         legalState = LegalState.GUILTY;
         lastConviction = LocalDateTime.now();
     }
 
-    public void findInnocent() {
+    public void findInnocent(boolean penalise) {
+        if(penalise) {
+            crimeMarks += 25;
+        }
         legalState = LegalState.INNOCENT;
         crimeMarks -= 5;
         victims.clear();
@@ -240,6 +247,10 @@ public class PVPPlayer implements ConfigurationSerializable {
     public void releaseFromJail() {
         legalState = LegalState.CLEAN;
         secondsAlreadyServed = 0;
+    }
+
+    public boolean wasAdminJailed() {
+        return nonMurderConvict;
     }
 
     /**
@@ -284,7 +295,7 @@ public class PVPPlayer implements ConfigurationSerializable {
         if(serialMap.containsKey("legalState")) { legalState = LegalState.valueOf((String) serialMap.get("legalState")); }
         if(serialMap.containsKey("lastConviction")) { lastConviction = LocalDateTime.parse((String) serialMap.get("lastConviction")); }
         if(serialMap.containsKey("secondsAlreadyServed")) { secondsAlreadyServed = (Integer) serialMap.get("secondsAlreadyServed"); }
-
+        if(serialMap.containsKey("nonMurderConvict")) { nonMurderConvict = (Boolean) serialMap.get("nonMurderConvict"); }
     }
 
     @Override
@@ -310,12 +321,14 @@ public class PVPPlayer implements ConfigurationSerializable {
                 victimIDs.add(victimID.toString());
             }
         }
+        serialMap.put("victims", victimIDs);
 
         if(legalState != null)
             serialMap.put("legalState", legalState.name());
         if(lastConviction != null)
             serialMap.put("lastConviction", lastConviction.toString());
         serialMap.put("secondsAlreadyServed", secondsAlreadyServed);
+        serialMap.put("nonMurderConvict", nonMurderConvict);
 
         return serialMap;
     }

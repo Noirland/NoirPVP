@@ -57,6 +57,7 @@ public class NoirPVPPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         JailCell.saveJailShortlist();
+        NoirPVPConfig.getInstance().saveCells();
         PVPPlayer.pauseAllCooldowns();
         FSDatabase.getInstance().saveDatabase();
     }

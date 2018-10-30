@@ -4,6 +4,7 @@ import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.PVPPlayer;
 import com.github.margeobur.noirpvp.tools.DelayedMessager;
+import com.github.margeobur.noirpvp.trials.TrialManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.event.Listener;
@@ -19,6 +20,11 @@ public class PlayerCommandListener implements Listener {
     public void onCommandUse(PlayerCommandPreprocessEvent event)
     {
         String command = event.getMessage();
+        PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(event.getPlayer().getUniqueId());
+        if(playerPVP.isJailed() || playerPVP.equals(TrialManager.getInstance().currentDefendant())) {
+            event.getPlayer().sendMessage("You may not use commands while jailed or on trial.");
+            event.setCancelled(true);
+        }
         if(command.equalsIgnoreCase("/back")) {
             PVPPlayer playerInfo = PVPPlayer.getPlayerByUUID(event.getPlayer().getUniqueId());
 
@@ -31,7 +37,7 @@ public class PlayerCommandListener implements Listener {
             Command c = Bukkit.getServer().getPluginCommand(command.substring(1));
             NoirPVPPlugin.getPlugin().getCommand("jail").getExecutor().onCommand(event.getPlayer(), c,
                     command.substring(1), new String[0]);
+            event.setCancelled(true);
         }
-
     }
 }

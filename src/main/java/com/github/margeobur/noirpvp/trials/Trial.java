@@ -82,9 +82,9 @@ public class Trial {
     void applyVerdict() {
         isGuilty = guiltyVotes > innocentVotes;
         if(isGuilty) {
-            defendant.findGuilty();
+            defendant.findGuilty(false);
         } else {
-            defendant.findInnocent();
+            defendant.findInnocent(false);
         }
     }
 

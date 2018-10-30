@@ -45,17 +45,6 @@ public class PlayerServerListener implements Listener {
     public void onPlayerLeave(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(player.getUniqueId());
-        if(player.getDisplayName().equals("tester4456")) {
-            if(printTask == null) {
-                printTask = new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        System.out.println("Time tester4456 has been offline: ");
-                    }
-                };
-            }
-            printTask.runTaskTimer(NoirPVPPlugin.getPlugin(),  2 * 20, 2 * 20);
-        }
 
         playerPVP.pauseCooldowns();
 
