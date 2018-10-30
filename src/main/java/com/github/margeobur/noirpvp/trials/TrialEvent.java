@@ -12,7 +12,7 @@ import java.util.Set;
 public final class TrialEvent extends Event {
 
     private Trial theTrial;
-    public enum TrialEventType { INIT, START, FINISH }
+    public enum TrialEventType { INIT, START, FINISH, RELEASE }
     private TrialEventType type;
 
     private static HandlerList _handlers = new HandlerList();

@@ -77,7 +77,7 @@ public class TrialEventListener implements Listener {
             JailCell.releasePlayer(defendant.getUniqueId());
             defendant.teleport(NoirPVPConfig.getInstance().getCourtDock());
 
-        } else {
+        } else if(event.getType().equals(TrialEvent.TrialEventType.FINISH)) {
             if(!trial.getIsGuiltyVerdict()) {
                 String broadcast = trial.getDefendant().getPlayer().getDisplayName() +
                         " has been found INNOCENT and has been released.";
@@ -97,6 +97,12 @@ public class TrialEventListener implements Listener {
                 Location cellLocation = JailCell.getVacantCellFor(defendant.getUniqueId());
                 defendant.teleport(cellLocation);
             }
+        } else if(event.getType().equals(TrialEvent.TrialEventType.RELEASE)) {
+            Player defendant = trial.getDefendant().getPlayer();
+            defendant.sendMessage("You are free to go.");
+
+            JailCell.releasePlayer(defendant.getUniqueId());
+            defendant.teleport(NoirPVPConfig.getInstance().getReleasePoint());
         }
     }
 

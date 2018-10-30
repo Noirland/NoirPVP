@@ -83,7 +83,20 @@ public class AdminCommands implements CommandExecutor {
 
                 Location newCourtDock = admin.getLocation();
                 NoirPVPConfig.getInstance().setCourtDock(newCourtDock);
-                break;
+                return true;
+            case SET_RELEASE_COMMAND:
+                if(!(sender instanceof Player)) {
+                    sender.sendMessage("You must use this command as a player so that the location can be found");
+                }
+                admin = (Player) sender;
+                if(!admin.hasPermission("noirpvp.setlocations")) {
+                    sender.sendMessage("You do not have permission to use this command.");
+                    return true;
+                }
+
+                Location newReleasePoint = admin.getLocation();
+                NoirPVPConfig.getInstance().setReleasePoint(newReleasePoint);
+                return true;
         }
         return false;
     }

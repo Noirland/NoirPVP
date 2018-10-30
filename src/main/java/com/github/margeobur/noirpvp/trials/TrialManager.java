@@ -3,9 +3,10 @@ package com.github.margeobur.noirpvp.trials;
 import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.PVPPlayer;
-import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -17,6 +18,7 @@ public class TrialManager {
     public enum VoteResult { NO_TRIAL , ALREADY_VOTED , NOT_ALLOWED, SUCCESS }
 
     private Deque<Trial> trials = new ArrayDeque<>();
+    private List<Trial> releaseTrials = new ArrayList<>();
 
     public static TrialManager getInstance() {
         if(instance == null) {
@@ -69,6 +71,9 @@ public class TrialManager {
                 Trial currentTrial = trials.peekFirst();
                 currentTrial.end();
                 trials.remove(currentTrial);
+                if(currentTrial.getIsGuiltyVerdict()) {
+                    scheduleJailRelease(currentTrial, 0);
+                }
                 tryDoNextTrial();
             }
         };
@@ -77,11 +82,24 @@ public class TrialManager {
         trialEndTask.runTaskLater(NoirPVPPlugin.getPlugin(), durationInTicks);
     }
 
-    public boolean trialInProgress() {
-        if(trials.isEmpty()) {
-            return false;
+    private void scheduleJailRelease(Trial finishedTrial, int alreadyServed) {
+        BukkitRunnable jailReleaseTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                finishedTrial.releasePlayer();
+                releaseTrials.remove(finishedTrial);
+            }
+        };
+
+        int delayInTicks = 20 * finishedTrial.getJailTimeSeconds() - alreadyServed;
+        jailReleaseTask.runTaskLater(NoirPVPPlugin.getPlugin(), delayInTicks);
+    }
+
+    public PVPPlayer currentDefendant() {
+        if(!trials.isEmpty() && trials.peekFirst().isInProgress()) {
+            return trials.peekFirst().getDefendant();
         }
-        return trials.peekFirst().isInProgress();
+        return null;
     }
 
     public VoteResult addVoteToCurrentTrial(UUID voterID, boolean voteIsGuilty) {
@@ -100,5 +118,24 @@ public class TrialManager {
 
         currentTrial.addVote(voterID, voteIsGuilty);
         return VoteResult.SUCCESS;
+    }
+
+    public void rescheduleTrialPotentially(UUID playerID) {
+        JailCell.refreshJailShortlist();
+        List<UUID> convictIDs = JailCell.getJailShortlist();
+        for(UUID convictID: convictIDs) {
+            if(convictID.equals(playerID)) { // should be unnecessary
+                PVPPlayer convictPVP = PVPPlayer.getPlayerByUUID(playerID);
+                if(convictPVP.lastLoggedOff() == null || !convictPVP.isJailed()) {
+                    return;
+                }
+
+                LocalDateTime lastConviction = convictPVP.getLastConviction();
+                Trial finishedTrial = new Trial(convictPVP, lastConviction.minusMinutes(1));
+                releaseTrials.add(finishedTrial);
+
+                scheduleJailRelease(finishedTrial, (int) convictPVP.getTimeAlreadyServed());
+            }
+        }
     }
 }

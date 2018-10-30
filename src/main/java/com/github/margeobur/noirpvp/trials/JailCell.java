@@ -1,5 +1,6 @@
 package com.github.margeobur.noirpvp.trials;
 
+import com.github.margeobur.noirpvp.FSDatabase;
 import org.bukkit.Location;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -10,6 +11,7 @@ import java.util.*;
 public class JailCell implements ConfigurationSerializable {
 
     private static List<JailCell> jailCells = new ArrayList<>();   // says whether or not each cell is occupied
+    private static List<UUID> jailPlayerShortlist = new ArrayList<>();
 
     private Location warp;
     private List<UUID> occupants = new ArrayList<>();
@@ -40,6 +42,27 @@ public class JailCell implements ConfigurationSerializable {
         }
     }
 
+    public static void saveJailShortlist() {
+        FSDatabase.getInstance().saveJailShortlist(jailPlayerShortlist);
+    }
+
+    public static void refreshJailShortlist() {
+        jailPlayerShortlist = FSDatabase.getInstance().getJailShortlist();
+    }
+
+    public static List<UUID> getJailShortlist() {
+        return jailPlayerShortlist;
+    }
+
+    public static boolean playerOnShortlist(UUID playerID) {
+        for(UUID id: jailPlayerShortlist) {
+            if(id.equals(playerID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public Map<String, Object> serialize() {
         Map<String, Object> serialMap = new HashMap<>();
@@ -53,7 +76,7 @@ public class JailCell implements ConfigurationSerializable {
             }
             serialMap.put("occupants", occupantIDStrs);
         } else {
-            serialMap.put("singleOccupant", singleOccupant);
+            serialMap.put("singleOccupant", singleOccupant.toString());
         }
         return serialMap;
     }
@@ -81,6 +104,7 @@ public class JailCell implements ConfigurationSerializable {
      * @return the {@link Location} to warp a player to when jailing them
      */
     public static Location getVacantCellFor(UUID playerID) {
+        jailPlayerShortlist.add(playerID);
         for(JailCell cell: jailCells) {
              if(!cell.canHouseMany && cell.singleOccupant == null) {
                 cell.singleOccupant = playerID;
@@ -101,6 +125,7 @@ public class JailCell implements ConfigurationSerializable {
      * Searches for the cell that the player is in and deletes them from the cell
      */
     public static void releasePlayer(UUID playerId) {
+        jailPlayerShortlist.remove(playerId);
         for(JailCell cell: jailCells) {
             if(cell.canHouseMany && cell.occupants.contains(playerId)) {
                 cell.occupants.remove(playerId);

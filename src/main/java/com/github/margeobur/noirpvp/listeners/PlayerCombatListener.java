@@ -35,7 +35,8 @@ public class PlayerCombatListener implements Listener {
      * had PVP damage.
      * PVP is allowed outside of GriefPrevention claims, or if it is tick damage.
      */
-    @EventHandler(priority = EventPriority.HIGHEST)     // always have the last say, but ignore cancelled events
+    // always have the last say, but ignore cancelled events
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerAttack(EntityDamageByEntityEvent event) {
         if(event.getDamager() instanceof Player) {
             PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(event.getDamager().getUniqueId());
@@ -58,10 +59,20 @@ public class PlayerCombatListener implements Listener {
             attacker = (Player) event.getDamager();
         }
 
+        PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(attacker.getUniqueId());
         Player victim = (Player) event.getEntity();
+        PVPPlayer victimPVP = PVPPlayer.getPlayerByUUID(victim.getUniqueId());
+
+        if(victimPVP.isJailed() || attackerPVP.isJailed()) {
+            event.setCancelled(true);
+            attacker.sendMessage("Guilty players cannot fight!");
+            attackerPVP.setLastHitCancelled(true);
+            return;
+        }
+
+        // check if either player is in a claim
         PlayerData victimData = gp.dataStore.getPlayerData(victim.getUniqueId());
         PlayerData attackerData = gp.dataStore.getPlayerData(attacker.getUniqueId());
-
         Claim claimVicIn = gp.dataStore.getClaimAt(victim.getLocation(), false, victimData.lastClaim);
         Claim claimAttIn = gp.dataStore.getClaimAt(attacker.getLocation(), false, attackerData.lastClaim);
         if(!(claimVicIn == null && claimAttIn == null)) {
@@ -69,13 +80,11 @@ public class PlayerCombatListener implements Listener {
             if(isWrongDamageType(event.getCause())) {
                 event.setCancelled(true);
                 attacker.sendMessage(NoirPVPConfig.CLAIM_DENY_MESSAGE);
-                PVPPlayer.getPlayerByUUID(attacker.getUniqueId()).setLastHitCancelled(true);
+                attackerPVP.setLastHitCancelled(true);
                 return;
             }
         }
 
-        PVPPlayer victimPVP = PVPPlayer.getPlayerByUUID(victim.getUniqueId());
-        PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(attacker.getUniqueId());
         if(!victimPVP.canBeHurt()) {
             event.setCancelled(true);
             attacker.sendMessage(NoirPVPConfig.PROTECTED_DENY_MESSAGE);

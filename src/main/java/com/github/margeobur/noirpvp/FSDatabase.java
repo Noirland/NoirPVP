@@ -7,6 +7,9 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -51,6 +54,27 @@ public class FSDatabase {
 
     public void savePlayerPVP(PVPPlayer player) {
         database.set(player.getID().toString(), player);
+    }
+
+    public List<UUID> getJailShortlist() {
+        if(database.contains("jail-shortlist")) {
+            List<UUID> convictIDs = new ArrayList<>();
+            List<String> convictIDStrs = (List<String>) database.get("jail-shortlist");
+            for(String idStr: convictIDStrs) {
+                convictIDs.add(UUID.fromString(idStr));
+            }
+            return convictIDs;
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    public void saveJailShortlist(List<UUID> convictIDs) {
+        List<String> convictIDStrs = new ArrayList<>();
+        for(UUID convictID: convictIDs) {
+            convictIDStrs.add(convictID.toString());
+        }
+        database.set("jail-shortlist", convictIDs);
     }
 
     public void reloadDatabase() {

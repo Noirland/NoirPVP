@@ -27,8 +27,8 @@ public class Trial {
 
     // The verdict. true if the defendant was found guilty
     private boolean isGuilty;
-
     private TrialState stateOfTrial;
+
     public Trial(PVPPlayer attacker) {
         initiatedTime = LocalDateTime.now();
         stateOfTrial = TrialState.PENDING;
@@ -38,6 +38,14 @@ public class Trial {
 
         TrialEvent trialStartingEvent = new TrialEvent(TrialEvent.TrialEventType.INIT, this);
         Bukkit.getServer().getPluginManager().callEvent(trialStartingEvent);
+    }
+
+    public Trial(PVPPlayer attacker, LocalDateTime initTime) {
+        initiatedTime = initTime;
+        stateOfTrial = TrialState.COMPLETED;
+
+        defendant = attacker;
+        victims = attacker.getVictims();
     }
 
     public boolean isInProgress() {
@@ -74,6 +82,13 @@ public class Trial {
 
         TrialEvent trialEndingEvent = new TrialEvent(TrialEvent.TrialEventType.FINISH, this);
         Bukkit.getServer().getPluginManager().callEvent(trialEndingEvent);
+    }
+
+    void releasePlayer() {
+        defendant.releaseFromJail();
+
+        TrialEvent trialResolvedEvent = new TrialEvent(TrialEvent.TrialEventType.RELEASE, this);
+        Bukkit.getServer().getPluginManager().callEvent(trialResolvedEvent);
     }
 
     public boolean getIsGuiltyVerdict() {

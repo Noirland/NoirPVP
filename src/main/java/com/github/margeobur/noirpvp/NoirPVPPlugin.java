@@ -6,7 +6,9 @@ import com.github.margeobur.noirpvp.listeners.PlayerCommandListener;
 import com.github.margeobur.noirpvp.listeners.PlayerDeathListener;
 import com.github.margeobur.noirpvp.listeners.PlayerServerListener;
 import com.github.margeobur.noirpvp.listeners.PlayerCombatListener;
+import com.github.margeobur.noirpvp.trials.JailCell;
 import com.github.margeobur.noirpvp.trials.TrialEventListener;
+import com.github.margeobur.noirpvp.trials.TrialManager;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
 import org.bukkit.Bukkit;
@@ -47,10 +49,14 @@ public class NoirPVPPlugin extends JavaPlugin {
         AdminCommands adminCH = new AdminCommands();
         getCommand("jail").setExecutor(adminCH);
         getCommand("setdock").setExecutor(adminCH);
+        getCommand("setrelease").setExecutor(adminCH);
         //this.getCommand("jail").setExecutor(commandHandler);
+
+        JailCell.refreshJailShortlist();
     }
     @Override
     public void onDisable() {
+        JailCell.saveJailShortlist();
         FSDatabase.getInstance().saveDatabase();
     }
 }

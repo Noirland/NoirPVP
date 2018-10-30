@@ -45,6 +45,7 @@ public class PVPPlayer implements ConfigurationSerializable {
     private enum LegalState { CLEAN, INNOCENT, GUILTY }
     private LegalState legalState;
     private LocalDateTime lastConviction;
+    private long secondsAlreadyServed = 0;
 
     public PVPPlayer(UUID playerID) {
         this.playerID = playerID;
@@ -134,7 +135,9 @@ public class PVPPlayer implements ConfigurationSerializable {
                 deathState = DeathState.CLEAR;
                 secondsLoggedOff = 0;
             }
-        }   // if in CLEAR state then we will always remain CLEAR (we only leave it via death in doDeath())
+        } else { // if in CLEAR state then we will always remain CLEAR (we only leave it via death in doDeath())
+            secondsLoggedOff = 0;
+        }
     }
 
     public void pauseCooldowns() {
@@ -142,6 +145,10 @@ public class PVPPlayer implements ConfigurationSerializable {
             lastMessageTask.cancel();
         }
         logOffTime = LocalDateTime.now();
+
+        Duration timeOnline = Duration.between(logOnTime, logOffTime);
+        long secondsServedNow = Math.abs(timeOnline.getSeconds());
+        secondsAlreadyServed += secondsServedNow;
     }
 
     public void resumeCooldowns() {
@@ -150,7 +157,7 @@ public class PVPPlayer implements ConfigurationSerializable {
             return;
         }
         Duration timeLoggedOff = Duration.between(logOnTime, logOffTime);
-        secondsLoggedOff = Math.abs(timeLoggedOff.getSeconds());
+        secondsLoggedOff += Math.abs(timeLoggedOff.getSeconds());
 
         Duration timeBetweenDeathLogoff = Duration.between(lastDeath, logOffTime);
         long secondsBetweenDeathLogoff = Math.abs(timeBetweenDeathLogoff.getSeconds());
@@ -168,6 +175,10 @@ public class PVPPlayer implements ConfigurationSerializable {
                 lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_DOUBLE_END, remainingTime);
             }
         }
+    }
+
+    public LocalDateTime lastLoggedOff() {
+        return logOffTime;
     }
 
     /**
@@ -213,10 +224,16 @@ public class PVPPlayer implements ConfigurationSerializable {
     public void findInnocent() {
         legalState = LegalState.INNOCENT;
         crimeMarks -= 5;
+        victims.clear();
+    }
+
+    public boolean isJailed() {
+        return legalState.equals(LegalState.GUILTY);
     }
 
     public void releaseFromJail() {
         legalState = LegalState.CLEAN;
+        secondsAlreadyServed = 0;
     }
 
     /**
@@ -227,13 +244,15 @@ public class PVPPlayer implements ConfigurationSerializable {
         return victimsCopy;
     }
 
+    public LocalDateTime getLastConviction() {
+        return lastConviction;
+    }
+
     public int getCrimeMarks() {
         return crimeMarks;
     }
 
-    public void jail() {
-
-    }
+    public long getTimeAlreadyServed() { return secondsAlreadyServed; }
 
     /* ---------- Serialisation and Deserialisation ---------- */
 
@@ -258,6 +277,7 @@ public class PVPPlayer implements ConfigurationSerializable {
 
         if(serialMap.containsKey("legalState")) { legalState = LegalState.valueOf((String) serialMap.get("legalState")); }
         if(serialMap.containsKey("lastConviction")) { lastConviction = LocalDateTime.parse((String) serialMap.get("lastConviction")); }
+        if(serialMap.containsKey("secondsAlreadyServed")) { secondsAlreadyServed = (Integer) serialMap.get("secondsAlreadyServed"); }
 
     }
 
@@ -289,6 +309,7 @@ public class PVPPlayer implements ConfigurationSerializable {
             serialMap.put("legalState", legalState.name());
         if(lastConviction != null)
             serialMap.put("lastConviction", lastConviction.toString());
+        serialMap.put("secondsAlreadyServed", secondsAlreadyServed);
 
         return serialMap;
     }
