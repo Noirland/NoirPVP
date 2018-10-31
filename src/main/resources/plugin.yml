@@ -1,5 +1,5 @@
 name: NoirPVP
-version: 0.1.6
+version: 0.1.7
 main: com.github.margeobur.noirpvp.NoirPVPPlugin
 author: margeobur
 description: PVP management for Noirland, 2018+
@@ -30,8 +30,8 @@ commands:
     permission: noirpvp.setlocations
 permissions:
   noirpvp.vote:
-    description: Allows players to use /innocent and /guilty to vote in trials.
+    description: Allows players to use /innocent, /guilty,  to vote in trials.
   noirpvp.jail:
-    description: Given to admins so that they can use /jail
+    description: Given to admins\mods so that they can use /jail <playername> <reason>
   noirpvp.setlocations:
     description: Given to admins so that they can add locations for the jail and trials

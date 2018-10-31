@@ -45,6 +45,10 @@ public class JudicialCommands implements CommandExecutor {
                     return true;
                 }
 
+                if(!sender.hasPermission("noirpvp.vote")) {
+                    sender.sendMessage("You do not have permission to vote in trials.");
+                }
+
                 VoteResult result = TrialManager.getInstance().addVoteToCurrentTrial(playerID, voteIsGuilty);
                 switch (result) {
                     case ALREADY_VOTED:

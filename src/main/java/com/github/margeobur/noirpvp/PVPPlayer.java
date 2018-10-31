@@ -31,6 +31,7 @@ public class PVPPlayer implements ConfigurationSerializable {
     private boolean lastDamagePVP = false;
     private LocalDateTime lastPVP;
     private LocalDateTime lastDeath;
+    private LocalDateTime lastRegularDeath;
     private enum DeathState { CLEAR, PROTECTED, COOLDOWN, PROTECTED_COOLDOWN } // used in determining whether the user can /back atm
     private DeathState deathState = DeathState.CLEAR;
 
@@ -104,6 +105,10 @@ public class PVPPlayer implements ConfigurationSerializable {
             lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_DOUBLE_END,
                     NoirPVPConfig.DOUBLE_PROTECTION_DURATION);
         }
+    }
+
+    public void doRegularDeath() {
+        lastRegularDeath = LocalDateTime.now();
     }
 
     /*
@@ -198,7 +203,15 @@ public class PVPPlayer implements ConfigurationSerializable {
         if(deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
             return false;
         } else {
-            return true;
+            if(lastRegularDeath == null) {
+                return false;
+            }
+            LocalDateTime backUseEnd = lastRegularDeath.plusSeconds(30);
+            if(backUseEnd.isBefore(LocalDateTime.now())) {
+                return false;
+            } else {
+                return true;
+            }
         }
     }
 

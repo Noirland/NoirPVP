@@ -52,9 +52,8 @@ public class AdminCommands implements CommandExecutor {
                     if(!(sender instanceof Player)) {
                         sender.sendMessage("You must be a player to vote");
                     }
-                    if(!sender.hasPermission("noirpvp.setlocations")) {
-                        sender.sendMessage("You do not have permission to use this command.");
-                        return true;
+                    if(!sender.hasPermission("noirpvp.vote")) {
+                        sender.sendMessage("You do not have permission to vote in trials.");
                     }
 
                     Player player = (Player) sender;
@@ -78,6 +77,7 @@ public class AdminCommands implements CommandExecutor {
                             player.sendMessage("The current trial is not an admin-initiated trial");
                             break;
                     }
+                    return true;
                 } else if(args.length == 1 && args[0].equals("addcell")) {
                     if(!(sender instanceof Player)) {
                         sender.sendMessage("You must use this command as a player so that the location can be found");
@@ -93,8 +93,8 @@ public class AdminCommands implements CommandExecutor {
                     return true;
                 } else if(args.length > 1) {
                     if((sender instanceof Player) &&
-                            !sender.hasPermission("noirpvp.setlocations")) {
-                        sender.sendMessage("You do not have permission to use this command.");
+                            !sender.hasPermission("noirpvp.jail")) {
+                        sender.sendMessage("You do not have permission to jail players");
                         return true;
                     }
 
