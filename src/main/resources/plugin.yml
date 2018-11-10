@@ -1,5 +1,5 @@
 name: NoirPVP
-version: 0.1.7
+version: 0.1.9
 main: com.github.margeobur.noirpvp.NoirPVPPlugin
 author: margeobur
 description: PVP management for Noirland, 2018+
@@ -16,10 +16,15 @@ commands:
   crime:
     description: Displays information about a player's crime status.
     usage: Use "/crime" to see how many crime marks you have. Use "/crime top" to see the players with the most crimes. Use "/crime <player name>" to see how many crimes a particular player has.
-  jail:
+  njail:
     description: Allows admins to detain a player and initiate a vote to enact discipline. Allows players to vote in a trial
-    usage: User "/jail <playername> <reason>" to jail a player. Use "/jail addcell" to set the current location as warp point for criminals
-    permission: noirpvp.jail
+    usage: User "/njail <playername> <reason>" to jail a player. Use "/njail addcell" to set the current location as warp point for criminals
+  nkick:
+    description: Allows players to vote for a player to be kicked
+    usage: /nkick to cast a vote to kick the player on trial
+  nban:
+    description: Allows players to vote for a player to be banned
+    usage: /nban to cast a vote to ban the player on trial
   setdock:
     description: Sets the location that alleged criminals will be teleported to when their trials begin
     usage: Use "/setdock" to set the current location as THE warp-point for the defendants in trials
@@ -30,8 +35,8 @@ commands:
     permission: noirpvp.setlocations
 permissions:
   noirpvp.vote:
-    description: Allows players to use /innocent, /guilty,  to vote in trials.
+    description: Allows players to use /innocent, /guilty,  to vote in trials. (/nban and /nkick for admin trials)
   noirpvp.jail:
-    description: Given to admins\mods so that they can use /jail <playername> <reason>
+    description: Given to admins\mods so that they can use /njail <playername> <reason>
   noirpvp.setlocations:
     description: Given to admins so that they can add locations for the jail and trials

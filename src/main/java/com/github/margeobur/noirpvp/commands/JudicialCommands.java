@@ -5,6 +5,7 @@ import com.github.margeobur.noirpvp.trials.TrialManager;
 import com.github.margeobur.noirpvp.trials.TrialManager.VoteResult;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -41,27 +42,28 @@ public class JudicialCommands implements CommandExecutor {
                     player = (Player) sender;
                     playerID = player.getUniqueId();
                 } else {
-                    sender.sendMessage("Only players may vote in trails!");
+                    sender.sendMessage(ChatColor.RED + "Only players may vote in trails!");
                     return true;
                 }
 
                 if(!sender.hasPermission("noirpvp.vote")) {
-                    sender.sendMessage("You do not have permission to vote in trials.");
+                    sender.sendMessage(ChatColor.RED + "You do not have permission to vote in trials.");
+                    return true;
                 }
 
                 VoteResult result = TrialManager.getInstance().addVoteToCurrentTrial(playerID, voteIsGuilty);
                 switch (result) {
                     case ALREADY_VOTED:
-                        player.sendMessage("You have already voted in this trial");
+                        player.sendMessage(ChatColor.RED + "You have already voted in this trial");
                         break;
                     case NO_TRIAL:
-                        player.sendMessage("There is not currently a trial in progress.");
+                        player.sendMessage(ChatColor.RED + "There is not currently a trial in progress.");
                         break;
                     case NOT_ALLOWED:
-                        player.sendMessage("You are barred from voting in the current trial.");
+                        player.sendMessage(ChatColor.RED + "You are barred from voting in the current trial.");
                         break;
                     case SUCCESS:
-                        player.sendMessage("Your vote has been accepted and recorded.");
+                        player.sendMessage(ChatColor.GOLD + "Your vote has been accepted and recorded.");
                         break;
                 }
                 return true;
@@ -81,9 +83,11 @@ public class JudicialCommands implements CommandExecutor {
                     if(args[0].equalsIgnoreCase("top")) {
                         StringBuilder message = new StringBuilder();
 
+                        message.append(ChatColor.GOLD);
                         message.append("==============================================================\n");
                         message.append("Top Criminals on Noirland\n");
                         message.append("==============================================================\n");
+                        message.append(ChatColor.RESET);
 
                         int i = 0;
                         List<PVPPlayer> criminals = PVPPlayer.getTopCriminals();
@@ -91,11 +95,13 @@ public class JudicialCommands implements CommandExecutor {
                             message.append(i++).append(": ").append(criminal.getPlayer().getDisplayName());
                         }
 
+                        sender.sendMessage(message.toString());
+
                         return true;
                     } else {
                         Player lookupPlayer = Bukkit.getPlayer(args[0]);
                         if(lookupPlayer == null) {
-                            sender.sendMessage("Player not found");
+                            sender.sendMessage(ChatColor.RED + "Player not found");
                             return true;
                         }
 

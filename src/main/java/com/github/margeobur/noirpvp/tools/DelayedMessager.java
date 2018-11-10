@@ -13,7 +13,7 @@ public class DelayedMessager {
         int ticks = seconds * 20;
 
         SendMessageTask task = new SendMessageTask(player, message);
-        task.runTaskLater(NoirPVPPlugin.getPlugin(), ticks);
+        task.runTaskLater(NoirPVPPlugin.getInstance(), ticks);
         return task;
     }
 

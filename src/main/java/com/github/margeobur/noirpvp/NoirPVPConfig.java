@@ -1,13 +1,14 @@
 package com.github.margeobur.noirpvp;
 
 import com.github.margeobur.noirpvp.trials.JailCell;
+import com.github.margeobur.noirpvp.trials.JailTrial;
+import com.github.margeobur.noirpvp.trials.Trial;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -20,7 +21,7 @@ public class NoirPVPConfig {
     public static String PROTECTED_DENY_MESSAGE;
     public static String SELF_COOLDOWN_DENY_MESSAGE;
     public static String PLAYER_PROTECTION_END = ChatColor.RED + "You are no longer protected from PVP";
-    public static String PLAYER_DOUBLE_END = ChatColor.RED + "You are no longer protected from PVP and may now use /back";
+    public static String PLAYER_DOUBLE_END = ChatColor.RED + "You are no longer protected from PVP";
 
     public static int PROTECTION_DURATION;
     public static int COOLDOWN_DURATION;
@@ -42,9 +43,9 @@ public class NoirPVPConfig {
     }
 
     public void initConfig() {
-        NoirPVPPlugin.getPlugin().saveDefaultConfig();
+        NoirPVPPlugin.getInstance().saveDefaultConfig();
         ConfigurationSerialization.registerClass(JailCell.class, "JailCell");
-        FileConfiguration config = NoirPVPPlugin.getPlugin().getConfig();
+        FileConfiguration config = NoirPVPPlugin.getInstance().getConfig();
 
         PROTECTION_DURATION = config.getInt("first-protection-duration");
         COOLDOWN_DURATION = config.getInt("cooldown-duration");
@@ -63,7 +64,7 @@ public class NoirPVPConfig {
                 List<JailCell> cells = (List<JailCell>) config.getList("jail-locations");
                 JailCell.setCells(cells);
             } catch (ClassCastException e) {
-                NoirPVPPlugin.getPlugin().getLogger().log(Level.SEVERE, "Could not get list of Jail cells");
+                NoirPVPPlugin.getInstance().getLogger().log(Level.SEVERE, "Could not get list of Jail cells");
             }
         }
 
@@ -76,18 +77,18 @@ public class NoirPVPConfig {
     }
 
     public void addJailCell(Location cellLocation) {
-        FileConfiguration config = NoirPVPPlugin.getPlugin().getConfig();
+        FileConfiguration config = NoirPVPPlugin.getInstance().getConfig();
         JailCell.addNewCell(cellLocation);
 
         config.set("jail-locations", JailCell.getCells());
-        NoirPVPPlugin.getPlugin().saveConfig();
+        NoirPVPPlugin.getInstance().saveConfig();
     }
 
     public void saveCells() {
-        FileConfiguration config = NoirPVPPlugin.getPlugin().getConfig();
+        FileConfiguration config = NoirPVPPlugin.getInstance().getConfig();
 
         config.set("jail-locations", JailCell.getCells());
-        NoirPVPPlugin.getPlugin().saveConfig();
+        NoirPVPPlugin.getInstance().saveConfig();
     }
 
     public Location getCourtDock() {
@@ -100,8 +101,8 @@ public class NoirPVPConfig {
 
     public void setCourtDock(Location courtDock) {
         this.courtDock = courtDock;
-        NoirPVPPlugin.getPlugin().getConfig().set("court-dock", courtDock);
-        NoirPVPPlugin.getPlugin().saveConfig();
+        NoirPVPPlugin.getInstance().getConfig().set("court-dock", courtDock);
+        NoirPVPPlugin.getInstance().saveConfig();
     }
 
     public Location getReleasePoint() {
@@ -114,7 +115,7 @@ public class NoirPVPConfig {
 
     public void setReleasePoint(Location releasePoint) {
         this.releasePoint = releasePoint;
-        NoirPVPPlugin.getPlugin().getConfig().set("release-point", releasePoint);
-        NoirPVPPlugin.getPlugin().saveConfig();
+        NoirPVPPlugin.getInstance().getConfig().set("release-point", releasePoint);
+        NoirPVPPlugin.getInstance().saveConfig();
     }
 }

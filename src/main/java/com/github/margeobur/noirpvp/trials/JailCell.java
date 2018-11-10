@@ -125,6 +125,9 @@ public class JailCell implements ConfigurationSerializable {
      * @return the {@link Location} to warp a player to when jailing them
      */
     public static Location getVacantCellFor(UUID playerID) {
+        if(jailCells.isEmpty()) {
+            return null;
+        }
 //        System.out.println("Adding " + playerID.toString() + " to the shortlist");
         for(JailCell cell: jailCells) {
              if(!cell.canHouseMany && cell.singleOccupant == null) {

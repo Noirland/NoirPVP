@@ -24,7 +24,7 @@ public class NoirPVPPlugin extends JavaPlugin {
 
     private static NoirPVPPlugin instance;
 
-    public static NoirPVPPlugin getPlugin() {
+    public static NoirPVPPlugin getInstance() {
         return instance;
     }
 
@@ -47,17 +47,23 @@ public class NoirPVPPlugin extends JavaPlugin {
         getCommand("guilty").setExecutor(commandHandler);
         getCommand("crime").setExecutor(commandHandler);
         AdminCommands adminCH = new AdminCommands();
-        getCommand("jail").setExecutor(adminCH);
+        getCommand("njail").setExecutor(adminCH);
+        getCommand("nkick").setExecutor(adminCH);
+        getCommand("nban").setExecutor(adminCH);
         getCommand("setdock").setExecutor(adminCH);
         getCommand("setrelease").setExecutor(adminCH);
         //this.getCommand("jail").setExecutor(commandHandler);
 
+        if(TrialManager.getInstance() == null) {
+            getLogger().log(Level.SEVERE, "Could not resume trials");
+        }
         JailCell.refreshJailShortlist();
     }
     @Override
     public void onDisable() {
         JailCell.saveJailShortlist();
         NoirPVPConfig.getInstance().saveCells();
+        TrialManager.getInstance().pauseAllTrials();
         PVPPlayer.pauseAllCooldowns();
         FSDatabase.getInstance().saveDatabase();
     }

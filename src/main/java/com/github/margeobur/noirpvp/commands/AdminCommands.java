@@ -7,6 +7,7 @@ import com.github.margeobur.noirpvp.trials.JailCell;
 import com.github.margeobur.noirpvp.trials.JailTrial;
 import com.github.margeobur.noirpvp.trials.TrialManager;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -25,19 +26,15 @@ import java.util.UUID;
  */
 public class AdminCommands implements CommandExecutor {
 
-    private static final String JAIL_COMMAND = "jail";
-    private static final String BAN_COMMAND = "ban";
-    private static final String KICK_COMMAND = "kick";
+    private static final String JAIL_COMMAND = "njail";
+    private static final String BAN_COMMAND = "nban";
+    private static final String KICK_COMMAND = "nkick";
     private static final String SET_DOCK_COMMAND = "setdock";
     private static final String SET_RELEASE_COMMAND = "setrelease";
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         String commandLabel = command.getLabel();
-        if(!sender.hasPermission("noirpvp.jail")) {
-            sender.sendMessage("You do not have permission to use this command.");
-            return true;
-        }
 
         JailTrial.JailTrialResult vote = JailTrial.JailTrialResult.JAIL;
         switch(commandLabel) {
@@ -62,19 +59,19 @@ public class AdminCommands implements CommandExecutor {
                             vote);
                     switch (result) {
                         case ALREADY_VOTED:
-                            player.sendMessage("You have already voted in this trial");
+                            player.sendMessage(ChatColor.RED + "You have already voted in this trial");
                             break;
                         case NO_TRIAL:
-                            player.sendMessage("There is not currently a trial in progress.");
+                            player.sendMessage(ChatColor.RED + "There is not currently a trial in progress.");
                             break;
                         case NOT_ALLOWED:
-                            player.sendMessage("You are barred from voting in the current trial.");
+                            player.sendMessage(ChatColor.RED + "You are barred from voting in the current trial.");
                             break;
                         case SUCCESS:
-                            player.sendMessage("Your vote has been accepted and recorded.");
+                            player.sendMessage(ChatColor.GOLD + "Your vote has been accepted and recorded.");
                             break;
                         case WRONG_TYPE:
-                            player.sendMessage("The current trial is not an admin-initiated trial");
+                            player.sendMessage(ChatColor.RED + "The current trial is not an admin-initiated trial");
                             break;
                     }
                     return true;

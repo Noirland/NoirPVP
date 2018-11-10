@@ -28,16 +28,19 @@ public class PlayerCommandListener implements Listener {
         if(command.equalsIgnoreCase("/back")) {
             PVPPlayer playerInfo = PVPPlayer.getPlayerByUUID(event.getPlayer().getUniqueId());
 
-            if(playerInfo != null && !playerInfo.canBack()) {
-                event.getPlayer().sendMessage("You cannot use /back unless you have just died. You may " +
-                        "not use /back after dying in PVP twice in a short period of time.");
-                event.setCancelled(true);
+            if(!event.getPlayer().isOp()) {
+                if (playerInfo != null && !playerInfo.canBack()) {
+                    event.getPlayer().sendMessage("You cannot use /back unless you have just died. You may " +
+                            "not use /back after dying in PVP twice in a short period of time.");
+                    event.setCancelled(true);
+                }
             }
-        } else if(command.equalsIgnoreCase("/kick") || command.equalsIgnoreCase("/ban")) {
-            Command c = Bukkit.getServer().getPluginCommand(command.substring(1));
-            NoirPVPPlugin.getPlugin().getCommand("jail").getExecutor().onCommand(event.getPlayer(), c,
-                    command.substring(1), new String[0]);
-            event.setCancelled(true);
         }
+//        } else if(command.equalsIgnoreCase("/kick") || command.equalsIgnoreCase("/ban")) {
+//            Command c = Bukkit.getServer().getPluginCommand(command.substring(1));
+//            NoirPVPPlugin.getInstance().getCommand("jail").getExecutor().onCommand(event.getPlayer(), c,
+//                    command.substring(1), new String[0]);
+//            event.setCancelled(true);
+//        }
     }
 }

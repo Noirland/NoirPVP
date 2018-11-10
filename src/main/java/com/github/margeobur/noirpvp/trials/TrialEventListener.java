@@ -4,6 +4,7 @@ import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.tools.DelayedMessager;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -39,6 +40,11 @@ public class TrialEventListener implements Listener {
                     "You may not leave until your trial has seen completion.");
 
             Location cellLocation = JailCell.getVacantCellFor(defendant.getUniqueId());
+            if(cellLocation == null) {
+                NoirPVPPlugin.getInstance().getLogger().log(Level.WARNING,
+                        "Player was sent to holding but no jail is set");
+                cellLocation = Bukkit.getWorlds().get(0).getSpawnLocation();
+            }
             defendant.teleport(cellLocation);
 
         } else if(event.getType().equals(TrialEvent.TrialEventType.START)) {
@@ -48,7 +54,7 @@ public class TrialEventListener implements Listener {
             } else {
                 broadcast = buildTrialMessage(trial);
             }
-            Bukkit.getServer().broadcastMessage(broadcast);
+            Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
 
             JailCell.releasePlayer(defendant.getUniqueId());
             defendant.teleport(NoirPVPConfig.getInstance().getCourtDock());
@@ -56,18 +62,18 @@ public class TrialEventListener implements Listener {
         } else if(event.getType().equals(TrialEvent.TrialEventType.FINISH)) {
             if(!trial.getIsGuiltyVerdict()) {
                 if(trial == null) {
-                    NoirPVPPlugin.getPlugin().getLogger().log(Level.SEVERE, "trial is null");
+                    NoirPVPPlugin.getInstance().getLogger().log(Level.SEVERE, "trial is null");
                     return;
                 } else if(trial.getDefendant() == null) {
-                    NoirPVPPlugin.getPlugin().getLogger().log(Level.SEVERE, "defendant is null");
+                    NoirPVPPlugin.getInstance().getLogger().log(Level.SEVERE, "defendant is null");
                     return;
                 } else if(trial.getDefendant().getPlayer() == null) {
-                    NoirPVPPlugin.getPlugin().getLogger().log(Level.SEVERE, "player is null");
+                    NoirPVPPlugin.getInstance().getLogger().log(Level.SEVERE, "player is null");
                     return;
                 }
-                String broadcast = trial.getDefendant().getPlayer().getDisplayName() +
-                        " has been found INNOCENT and has been released.";
-                Bukkit.getServer().broadcastMessage(broadcast);
+                String broadcast = trial.getDefendant().getPlayer().getDisplayName() + ChatColor.GOLD +
+                        ChatColor.GOLD + " has been found " + ChatColor.WHITE + "INNOCENT" + ChatColor.GOLD + " and has been released.";
+                Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
 
                 Location releaseLocation = NoirPVPConfig.getInstance().getReleasePoint();
                 defendant.teleport(releaseLocation);
@@ -75,23 +81,28 @@ public class TrialEventListener implements Listener {
                 String timeStr = DelayedMessager.formatTimeString(trial.getJailTimeSeconds());
 
                 String broadcast = defendant.getDisplayName() +
-                        " has been found GUILTY and will spend " + timeStr + " in jail.";
-                Bukkit.getServer().broadcastMessage(broadcast);
+                        ChatColor.GOLD + " has been found " + ChatColor.DARK_RED + "GUILTY" + ChatColor.GOLD + " and will spend " + timeStr + " in jail.";
+                Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
 
                 Location cellLocation = JailCell.getVacantCellFor(defendant.getUniqueId());
+                if(cellLocation == null) {
+                    NoirPVPPlugin.getInstance().getLogger().log(Level.WARNING,
+                            "Player was sent to holding but no jail is set");
+                    cellLocation = Bukkit.getWorlds().get(0).getSpawnLocation();
+                }
                 defendant.teleport(cellLocation);
             } else if(isJailTrial) {
                 if(jTrial.getResult().equals(JailTrial.JailTrialResult.KICK)) {
                     String broadcast = defendant.getDisplayName() +
-                            " has been found GUILTY and will be kicked.";
-                    Bukkit.getServer().broadcastMessage(broadcast);
+                            ChatColor.GOLD + " has been found " + ChatColor.DARK_RED + "GUILTY" + ChatColor.GOLD + " and will be kicked.";
+                    Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
 
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
                             "kick " + defendant.getName() + " " + jTrial.getReason());
                 } else if(jTrial.getResult().equals(JailTrial.JailTrialResult.BAN)) {
                     String broadcast = defendant.getDisplayName() +
-                            " has been found GUILTY and will be banned.";
-                    Bukkit.getServer().broadcastMessage(broadcast);
+                            ChatColor.GOLD + " has been found " + ChatColor.DARK_RED + "GUILTY" + ChatColor.GOLD + " and will be banned.";
+                    Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
 
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
                             "ban " + defendant.getName() + " " + jTrial.getReason());
@@ -108,16 +119,20 @@ public class TrialEventListener implements Listener {
     private String buildJailMessage(JailTrial trial) {
         StringBuilder broadcast = new StringBuilder();
         broadcast.append(trial.getDefendant().getPlayer().getDisplayName())
+                .append(ChatColor.GOLD)
                 .append(" is on trial for the reason: ")
-                .append(trial.getReason());
+                .append(ChatColor.WHITE)
+                .append(trial.getReason())
+                .append(ChatColor.GOLD);
 
-        broadcast.append(" Vote on the action that should be taken with /innocent, /jail, /kick or /ban.");
+        broadcast.append(" Vote on the action that should be taken with /innocent, /njail, /nkick or /nban.");
         return broadcast.toString();
     }
 
     private String buildTrialMessage(Trial trial) {
         StringBuilder broadcast = new StringBuilder();
         broadcast.append(trial.getDefendant().getPlayer().getDisplayName())
+                .append(ChatColor.GOLD)
                 .append(" is on trial for the murder of ");
 
         // Get the names of all the players

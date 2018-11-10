@@ -203,10 +203,19 @@ public class PVPPlayer implements ConfigurationSerializable {
         if(deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
             return false;
         } else {
+            LocalDateTime backUseEnd;
             if(lastRegularDeath == null) {
-                return false;
+                if(lastDeath == null) {
+                    return false;
+                } else {
+                    backUseEnd = lastDeath.plusSeconds(30);
+                }
+            } else if(lastDeath == null || lastDeath.isBefore(lastRegularDeath)) {
+                backUseEnd = lastRegularDeath.plusSeconds(30);
+            } else {
+                backUseEnd = lastDeath.plusSeconds(30);
             }
-            LocalDateTime backUseEnd = lastRegularDeath.plusSeconds(30);
+
             if(backUseEnd.isBefore(LocalDateTime.now())) {
                 return false;
             } else {
@@ -239,7 +248,6 @@ public class PVPPlayer implements ConfigurationSerializable {
     }
 
     public void findGuilty(boolean nonMurder) {
-
         legalState = LegalState.GUILTY;
         lastConviction = LocalDateTime.now();
     }
@@ -354,7 +362,8 @@ public class PVPPlayer implements ConfigurationSerializable {
                 return player;
             }
         }
-        return null;
+        PVPPlayer player = FSDatabase.getInstance().getPlayerPVPbyUUID(id);
+        return player;
     }
 
     public static void addIfNotPresent(UUID id) {

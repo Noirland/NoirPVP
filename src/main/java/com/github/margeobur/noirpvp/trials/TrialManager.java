@@ -1,13 +1,15 @@
 package com.github.margeobur.noirpvp.trials;
 
+import com.github.margeobur.noirpvp.FSDatabase;
 import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.PVPPlayer;
+import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Singleton class that manages queuing and scheduling of Trials.
@@ -18,6 +20,7 @@ public class TrialManager {
     public enum VoteResult { NO_TRIAL, ALREADY_VOTED, NOT_ALLOWED, WRONG_TYPE, SUCCESS }
 
     private Deque<Trial> trials = new ArrayDeque<>();
+    private List<Trial> offlineTrials = new ArrayList<>();
     private List<Trial> releaseTrials = new ArrayList<>();
 
     public static TrialManager getInstance() {
@@ -27,7 +30,40 @@ public class TrialManager {
         return instance;
     }
 
-    private TrialManager() { }
+    private TrialManager() {
+        FSDatabase database = FSDatabase.getInstance();
+
+        List<Trial> queuedRegularTrials = database.getTrials("queued-trials");
+        List<JailTrial> queuedJailTrials = database.getJailTrials("queued-jail-trials");
+        if(queuedRegularTrials != null) {
+            for (Trial queuedTrial : queuedRegularTrials) {
+                trials.addLast(queuedTrial);
+            }
+        }
+        if(queuedJailTrials != null) {
+            for(Trial queuedTrial: queuedJailTrials) {
+                trials.addLast(queuedTrial);
+            }
+        }
+
+        List<Trial> offlineRegTrials = database.getTrials("offline-trials");
+        List<JailTrial> offlineJailTrials = database.getJailTrials("offline-jail-trials");
+        if(offlineRegTrials != null) {
+            for(Trial offlineTrial: offlineRegTrials) {
+                offlineTrials.add(offlineTrial);
+            }
+        }
+        if(offlineJailTrials != null) {
+            for(Trial offlineTrial: offlineJailTrials) {
+                offlineTrials.add(offlineTrial);
+            }
+        }
+
+        if(!trials.isEmpty()) {
+            NoirPVPPlugin.getInstance().getLogger().log(Level.INFO, "Found trials");
+            tryDoNextTrial();
+        }
+    }
 
     public void dispatchNewTrial(PVPPlayer attacker) {
         Trial newTrial = new Trial(attacker);
@@ -39,7 +75,7 @@ public class TrialManager {
             public void run() {
                 tryDoNextTrial();
             }
-        }.runTaskLater(NoirPVPPlugin.getPlugin(), 5 * 20);
+        }.runTaskLater(NoirPVPPlugin.getInstance(), 5 * 20);
     }
 
     public void dispatchNewJailTrial(PVPPlayer player, String reason) {
@@ -51,7 +87,7 @@ public class TrialManager {
             public void run() {
                 tryDoNextTrial();
             }
-        }.runTaskLater(NoirPVPPlugin.getPlugin(), 5 * 20);
+        }.runTaskLater(NoirPVPPlugin.getInstance(), 5 * 20);
     }
 
     private void tryDoNextTrial() {
@@ -68,8 +104,14 @@ public class TrialManager {
         // if the trial at the HEAD of the queue is neither in progress nor complete, then
         // it must be pending, so we can start it and schedule its completion.
 
-        mostRecentTrial.start();
-        scheduleTrialEnd();
+        if(mostRecentTrial.getDefendant().getPlayer() == null || !mostRecentTrial.getDefendant().getPlayer().isOnline()) {
+            offlineTrials.add(mostRecentTrial);
+            trials.remove(mostRecentTrial);
+            tryDoNextTrial();
+        } else {
+            mostRecentTrial.start();
+            scheduleTrialEnd();
+        }
     }
 
     private void scheduleTrialEnd() {
@@ -77,6 +119,12 @@ public class TrialManager {
             @Override
             public void run() {
                 Trial currentTrial = trials.peekFirst();
+                if(currentTrial.getDefendant().getPlayer() == null || !currentTrial.getDefendant().getPlayer().isOnline()) {
+                    offlineTrials.add(currentTrial);
+                    trials.remove(currentTrial);
+                    currentTrial.reset();
+                    return;
+                }
                 currentTrial.end();
                 trials.remove(currentTrial);
                 if((currentTrial instanceof JailTrial) &&
@@ -90,7 +138,7 @@ public class TrialManager {
         };
 
         int durationInTicks = 20 * NoirPVPConfig.TRIAL_DURATION;
-        trialEndTask.runTaskLater(NoirPVPPlugin.getPlugin(), durationInTicks);
+        trialEndTask.runTaskLater(NoirPVPPlugin.getInstance(), durationInTicks);
     }
 
     private void scheduleJailRelease(Trial finishedTrial, int alreadyServed) {
@@ -103,7 +151,7 @@ public class TrialManager {
         };
         
         int delayInTicks = 20 * (finishedTrial.getJailTimeSeconds() - alreadyServed);
-        jailReleaseTask.runTaskLater(NoirPVPPlugin.getPlugin(), delayInTicks);
+        jailReleaseTask.runTaskLater(NoirPVPPlugin.getInstance(), delayInTicks);
     }
 
     public PVPPlayer currentDefendant() {
@@ -115,12 +163,15 @@ public class TrialManager {
 
     public VoteResult addVoteToJailTrial(UUID voterID, JailTrial.JailTrialResult vote) {
         Trial cTrial = trials.peekFirst();
+        if(cTrial == null) {
+            return VoteResult.NO_TRIAL;
+        }
         if(!(cTrial instanceof JailTrial)) {
             return VoteResult.WRONG_TYPE;
         }
         JailTrial currentTrial = (JailTrial) cTrial;
 
-        if(currentTrial == null || !currentTrial.isInProgress()) {
+        if(!currentTrial.isInProgress()) {
             return VoteResult.NO_TRIAL;
         }
 
@@ -146,7 +197,7 @@ public class TrialManager {
             return VoteResult.ALREADY_VOTED;
         }
 
-        if(voterID.equals(currentTrial.getDefendant().getPlayer().getUniqueId())) {
+        if(voterID.equals(currentTrial.getDefendant().getID())) {
             return VoteResult.NOT_ALLOWED;
         }
 
@@ -154,12 +205,49 @@ public class TrialManager {
         return VoteResult.SUCCESS;
     }
 
-    public void rescheduleTrialPotentially(UUID playerID) {
+    public void pauseAllTrials() {
+        FSDatabase database = FSDatabase.getInstance();
+        if(trials.peekFirst().isInProgress()) {
+            trials.peekFirst().reset();
+        }
+
+        List<Trial> queuedRegularTrials = new ArrayList<>();
+        List<JailTrial> queuedJailTrials = new ArrayList<>();
+        for(Trial queuedTrial: trials) {
+            if(queuedTrial instanceof JailTrial) {
+                queuedJailTrials.add((JailTrial) queuedTrial);
+            } else {
+                queuedRegularTrials.add(queuedTrial);
+            }
+        }
+        if(!queuedRegularTrials.isEmpty())
+            database.saveTrials(queuedRegularTrials, "queued-trials");
+
+        if(!queuedJailTrials.isEmpty())
+            database.saveJailTrials(queuedJailTrials, "queued-jail-trials");
+
+        List<Trial> offlineRegTrials = new ArrayList<>();
+        List<JailTrial> offlineJailTrials = new ArrayList<>();
+        for(Trial offlineTrial: offlineTrials) {
+            if(offlineJailTrials instanceof JailTrial) {
+                offlineJailTrials.add((JailTrial) offlineTrial);
+            } else {
+                offlineRegTrials.add(offlineTrial);
+            }
+        }
+        if(!offlineRegTrials.isEmpty())
+            database.saveTrials(offlineRegTrials, "offline-trials");
+
+        if(!offlineJailTrials.isEmpty())
+            database.saveJailTrials(offlineJailTrials, "offline-jail-trials");
+    }
+
+    public void rescheduleJailReleasePotentially(UUID playerID) {
         JailCell.refreshJailShortlist();
         Map<UUID, Integer> convictIDs = JailCell.getJailShortlist();
         Set<UUID> ids = convictIDs.keySet();
         for(UUID convictID: ids) {
-            if(convictID.equals(playerID)) { // should be unnecessary
+            if(convictID.equals(playerID)) {
                 PVPPlayer convictPVP = PVPPlayer.getPlayerByUUID(playerID);
                 if(convictPVP.lastLoggedOff() == null || !convictPVP.isJailed()) {
                     return;
@@ -175,6 +263,28 @@ public class TrialManager {
                 releaseTrials.add(finishedTrial);
 
                 scheduleJailRelease(finishedTrial, (int) convictPVP.getTimeAlreadyServed());
+            }
+        }
+    }
+
+    public void retryOfflineTrialPotentially(UUID playerID) {
+        for(Trial unfinishedTrial: offlineTrials) {
+            if(unfinishedTrial.getDefendant().getID().equals(playerID)) {
+                if(unfinishedTrial.isComplete()) {
+                    unfinishedTrial.end();
+                    offlineTrials.remove(unfinishedTrial);
+                    if((unfinishedTrial instanceof JailTrial) &&
+                            ((JailTrial) unfinishedTrial).getResult().equals(JailTrial.JailTrialResult.JAIL) ||
+                            !(unfinishedTrial instanceof JailTrial) &&
+                                    unfinishedTrial.getIsGuiltyVerdict()) {
+                        scheduleJailRelease(unfinishedTrial, 0);
+                    }
+                } else {
+                    offlineTrials.remove(unfinishedTrial);
+                    trials.addLast(unfinishedTrial);
+                    tryDoNextTrial();
+                }
+                return;
             }
         }
     }

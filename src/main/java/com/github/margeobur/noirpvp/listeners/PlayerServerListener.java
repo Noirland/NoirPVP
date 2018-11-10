@@ -4,8 +4,8 @@ import com.github.margeobur.noirpvp.FSDatabase;
 import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.PVPPlayer;
-import com.github.margeobur.noirpvp.trials.JailCell;
 import com.github.margeobur.noirpvp.trials.TrialManager;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,6 +14,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -28,6 +29,7 @@ public class PlayerServerListener implements Listener {
     // the time to wait before committing the player data to disk and removing from memory
     private static final int WAIT_TIME_BEFORE_SAVING = 5;
     private static BukkitRunnable printTask;
+    private LocalDateTime lastTeleport = LocalDateTime.now();
 
     public PlayerServerListener() { }
 
@@ -38,7 +40,8 @@ public class PlayerServerListener implements Listener {
         PVPPlayer.addIfNotPresent(playerID);
         PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(playerID);
         playerPVP.resumeCooldowns();
-        TrialManager.getInstance().rescheduleTrialPotentially(playerID);
+        TrialManager.getInstance().rescheduleJailReleasePotentially(playerID);
+        TrialManager.getInstance().retryOfflineTrialPotentially(playerID);
     }
 
     @EventHandler
@@ -60,7 +63,7 @@ public class PlayerServerListener implements Listener {
         };
 
         int ticks = WAIT_TIME_BEFORE_SAVING * 60 * 20;
-        runInfoDel.runTaskLater(NoirPVPPlugin.getPlugin(), ticks);
+        runInfoDel.runTaskLater(NoirPVPPlugin.getInstance(), ticks);
     }
 
     @EventHandler
@@ -68,11 +71,24 @@ public class PlayerServerListener implements Listener {
         UUID playerID = event.getPlayer().getUniqueId();
         PVPPlayer possibleDefendant = TrialManager.getInstance().currentDefendant();
 //        if(!JailCell.playerOnShortlist(playerID)) {
-            if(possibleDefendant == null || !possibleDefendant.getID().equals(playerID)) {
-                return;
-            }
+        if(possibleDefendant == null || !possibleDefendant.getID().equals(playerID)) {
+            return;
+        }
 //        }
 
-        event.setCancelled(true);
+        Location trialDock = NoirPVPConfig.getInstance().getCourtDock();
+        Location playerLocation = event.getTo();
+        if(playerLocation.getBlockX() > trialDock.getBlockX() + 1
+            || playerLocation.getBlockX() < trialDock.getBlockX() - 1
+            || playerLocation.getBlockY() > trialDock.getBlockY() + 1
+            || playerLocation.getBlockY() < trialDock.getBlockY() - 1
+            || playerLocation.getBlockZ() > trialDock.getBlockZ() + 2 // +2 to allow them to jump
+            || playerLocation.getBlockZ() < trialDock.getBlockZ() - 1) {
+
+            if(lastTeleport.plusSeconds(3).isBefore(LocalDateTime.now())) {
+                lastTeleport = LocalDateTime.now();
+                event.getPlayer().teleport(trialDock);
+            }
+        }
     }
 }

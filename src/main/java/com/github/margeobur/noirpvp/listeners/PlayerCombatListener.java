@@ -2,6 +2,7 @@ package com.github.margeobur.noirpvp.listeners;
 
 import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.PVPPlayer;
+import com.github.margeobur.noirpvp.trials.TrialManager;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.PlayerData;
@@ -68,6 +69,14 @@ public class PlayerCombatListener implements Listener {
             attacker.sendMessage("Guilty players cannot fight!");
             attackerPVP.setLastHitCancelled(true);
             return;
+        } else if(TrialManager.getInstance().currentDefendant() != null) {
+            if(TrialManager.getInstance().currentDefendant().equals(victimPVP)
+                || TrialManager.getInstance().currentDefendant().equals(attackerPVP)) {
+                event.setCancelled(true);
+                attacker.sendMessage("Players on trial cannot fight!");
+                attackerPVP.setLastHitCancelled(true);
+                return;
+            }
         }
 
         // check if either player is in a claim
