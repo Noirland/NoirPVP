@@ -103,7 +103,7 @@ public class FSDatabase {
         return trials;
     }
 
-    public void reloadDatabase() {
+    private void reloadDatabase() {
         if (databaseFile == null) {
             databaseFile = new File(NoirPVPPlugin.getInstance().getDataFolder(), dbFilename);
             if(!databaseFile.exists()) {
@@ -136,14 +136,14 @@ public class FSDatabase {
         }
     }
 
-    public FileConfiguration getDatabase() {
+    private FileConfiguration getDatabase() {
         if (database == null) {
             reloadDatabase();
         }
         return database;
     }
 
-    public void saveDatabase() {
+    private void saveDatabase() {
         if (database == null || databaseFile == null) {
             return;
         }
@@ -158,6 +158,7 @@ public class FSDatabase {
 
         @Override
         public void run() {
+            PVPPlayer.saveAllPVPData();
             saveDatabase();
         }
     }

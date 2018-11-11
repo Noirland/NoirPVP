@@ -19,6 +19,8 @@ import java.util.logging.Level;
  */
 public class TrialEventListener implements Listener {
 
+    private static final String BROADCAST_PREFIX =
+            ChatColor.GOLD + "[" + ChatColor.RED  + "Trial Announcement" + ChatColor.GOLD + "]" + ChatColor.RESET;
     private static final int NUM_NAMES_DISPLAYED = 4;
 
     @EventHandler
@@ -54,7 +56,7 @@ public class TrialEventListener implements Listener {
             } else {
                 broadcast = buildTrialMessage(trial);
             }
-            Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
+            Bukkit.getServer().broadcastMessage(BROADCAST_PREFIX + broadcast);
 
             JailCell.releasePlayer(defendant.getUniqueId());
             defendant.teleport(NoirPVPConfig.getInstance().getCourtDock());
@@ -73,7 +75,7 @@ public class TrialEventListener implements Listener {
                 }
                 String broadcast = trial.getDefendant().getPlayer().getDisplayName() + ChatColor.GOLD +
                         ChatColor.GOLD + " has been found " + ChatColor.WHITE + "INNOCENT" + ChatColor.GOLD + " and has been released.";
-                Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
+                Bukkit.getServer().broadcastMessage(BROADCAST_PREFIX + broadcast);
 
                 Location releaseLocation = NoirPVPConfig.getInstance().getReleasePoint();
                 defendant.teleport(releaseLocation);
@@ -82,7 +84,7 @@ public class TrialEventListener implements Listener {
 
                 String broadcast = defendant.getDisplayName() +
                         ChatColor.GOLD + " has been found " + ChatColor.DARK_RED + "GUILTY" + ChatColor.GOLD + " and will spend " + timeStr + " in jail.";
-                Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
+                Bukkit.getServer().broadcastMessage(BROADCAST_PREFIX + broadcast);
 
                 Location cellLocation = JailCell.getVacantCellFor(defendant.getUniqueId());
                 if(cellLocation == null) {
@@ -95,14 +97,14 @@ public class TrialEventListener implements Listener {
                 if(jTrial.getResult().equals(JailTrial.JailTrialResult.KICK)) {
                     String broadcast = defendant.getDisplayName() +
                             ChatColor.GOLD + " has been found " + ChatColor.DARK_RED + "GUILTY" + ChatColor.GOLD + " and will be kicked.";
-                    Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
+                    Bukkit.getServer().broadcastMessage(BROADCAST_PREFIX + broadcast);
 
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
                             "kick " + defendant.getName() + " " + jTrial.getReason());
                 } else if(jTrial.getResult().equals(JailTrial.JailTrialResult.BAN)) {
                     String broadcast = defendant.getDisplayName() +
                             ChatColor.GOLD + " has been found " + ChatColor.DARK_RED + "GUILTY" + ChatColor.GOLD + " and will be banned.";
-                    Bukkit.getServer().broadcastMessage(ChatColor.GOLD + "[Trial Announcement]" + broadcast);
+                    Bukkit.getServer().broadcastMessage(BROADCAST_PREFIX + broadcast);
 
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
                             "ban " + defendant.getName() + " " + jTrial.getReason());

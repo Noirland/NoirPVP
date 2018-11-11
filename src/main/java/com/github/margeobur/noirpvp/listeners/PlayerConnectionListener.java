@@ -9,6 +9,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -16,23 +17,23 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.logging.Level;
 
 /**
  * Responsible for initiating the loading of player data into memory, as well as the saving of player data
- * to the disk.
- *
- * So that there isn't yet another class, this class is responsible for stopping player movement when they are
- * jailed.
+ * to the database when they leave.
  */
-public class PlayerServerListener implements Listener {
+public class PlayerConnectionListener implements Listener {
 
     // the time to wait before committing the player data to disk and removing from memory
     private static final int WAIT_TIME_BEFORE_SAVING = 5;
-    private static BukkitRunnable printTask;
-    private LocalDateTime lastTeleport = LocalDateTime.now();
 
-    public PlayerServerListener() { }
+    public PlayerConnectionListener() { }
 
+    /**
+     * When a player joins we want to retrieve their PVP-related data from the database and
+     * resume any PVP or trial cooldowns.
+     */
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         UUID playerID = event.getPlayer().getUniqueId();
@@ -44,6 +45,10 @@ public class PlayerServerListener implements Listener {
         TrialManager.getInstance().retryOfflineTrialPotentially(playerID);
     }
 
+    /**
+     * When a player leaves we want to save their data to the database and schedule their data
+     * for being cleared from memory.
+     */
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent event) {
         Player player = event.getPlayer();
@@ -64,31 +69,5 @@ public class PlayerServerListener implements Listener {
 
         int ticks = WAIT_TIME_BEFORE_SAVING * 60 * 20;
         runInfoDel.runTaskLater(NoirPVPPlugin.getInstance(), ticks);
-    }
-
-    @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event) {
-        UUID playerID = event.getPlayer().getUniqueId();
-        PVPPlayer possibleDefendant = TrialManager.getInstance().currentDefendant();
-//        if(!JailCell.playerOnShortlist(playerID)) {
-        if(possibleDefendant == null || !possibleDefendant.getID().equals(playerID)) {
-            return;
-        }
-//        }
-
-        Location trialDock = NoirPVPConfig.getInstance().getCourtDock();
-        Location playerLocation = event.getTo();
-        if(playerLocation.getBlockX() > trialDock.getBlockX() + 1
-            || playerLocation.getBlockX() < trialDock.getBlockX() - 1
-            || playerLocation.getBlockY() > trialDock.getBlockY() + 1
-            || playerLocation.getBlockY() < trialDock.getBlockY() - 1
-            || playerLocation.getBlockZ() > trialDock.getBlockZ() + 2 // +2 to allow them to jump
-            || playerLocation.getBlockZ() < trialDock.getBlockZ() - 1) {
-
-            if(lastTeleport.plusSeconds(3).isBefore(LocalDateTime.now())) {
-                lastTeleport = LocalDateTime.now();
-                event.getPlayer().teleport(trialDock);
-            }
-        }
     }
 }

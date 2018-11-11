@@ -49,14 +49,10 @@ public class TrialManager {
         List<Trial> offlineRegTrials = database.getTrials("offline-trials");
         List<JailTrial> offlineJailTrials = database.getJailTrials("offline-jail-trials");
         if(offlineRegTrials != null) {
-            for(Trial offlineTrial: offlineRegTrials) {
-                offlineTrials.add(offlineTrial);
-            }
+            offlineTrials.addAll(offlineRegTrials);
         }
         if(offlineJailTrials != null) {
-            for(Trial offlineTrial: offlineJailTrials) {
-                offlineTrials.add(offlineTrial);
-            }
+            offlineTrials.addAll(offlineJailTrials);
         }
 
         if(!trials.isEmpty()) {
@@ -207,7 +203,7 @@ public class TrialManager {
 
     public void pauseAllTrials() {
         FSDatabase database = FSDatabase.getInstance();
-        if(trials.peekFirst().isInProgress()) {
+        if(trials.peekFirst() != null && trials.peekFirst().isInProgress()) {
             trials.peekFirst().reset();
         }
 
@@ -229,7 +225,7 @@ public class TrialManager {
         List<Trial> offlineRegTrials = new ArrayList<>();
         List<JailTrial> offlineJailTrials = new ArrayList<>();
         for(Trial offlineTrial: offlineTrials) {
-            if(offlineJailTrials instanceof JailTrial) {
+            if(offlineTrial instanceof JailTrial) {
                 offlineJailTrials.add((JailTrial) offlineTrial);
             } else {
                 offlineRegTrials.add(offlineTrial);

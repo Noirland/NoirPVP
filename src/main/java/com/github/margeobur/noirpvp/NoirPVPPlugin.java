@@ -2,10 +2,7 @@ package com.github.margeobur.noirpvp;
 
 import com.github.margeobur.noirpvp.commands.AdminCommands;
 import com.github.margeobur.noirpvp.commands.JudicialCommands;
-import com.github.margeobur.noirpvp.listeners.PlayerCommandListener;
-import com.github.margeobur.noirpvp.listeners.PlayerDeathListener;
-import com.github.margeobur.noirpvp.listeners.PlayerServerListener;
-import com.github.margeobur.noirpvp.listeners.PlayerCombatListener;
+import com.github.margeobur.noirpvp.listeners.*;
 import com.github.margeobur.noirpvp.trials.JailCell;
 import com.github.margeobur.noirpvp.trials.TrialEventListener;
 import com.github.margeobur.noirpvp.trials.TrialManager;
@@ -36,11 +33,12 @@ public class NoirPVPPlugin extends JavaPlugin {
         GriefPrevention gp = (GriefPrevention) Bukkit.getPluginManager().getPlugin("GriefPrevention");
 
         // ---------- listeners ----------
-        getServer().getPluginManager().registerEvents(new PlayerServerListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerConnectionListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerCombatListener(gp), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerCommandListener(), this);
         getServer().getPluginManager().registerEvents(new TrialEventListener(), this);
+        getServer().getPluginManager().registerEvents(new JailedPlayerListener(), this);
 
         JudicialCommands commandHandler = new JudicialCommands();
         getCommand("innocent").setExecutor(commandHandler);
@@ -65,6 +63,6 @@ public class NoirPVPPlugin extends JavaPlugin {
         NoirPVPConfig.getInstance().saveCells();
         TrialManager.getInstance().pauseAllTrials();
         PVPPlayer.pauseAllCooldowns();
-        FSDatabase.getInstance().saveDatabase();
+        PVPPlayer.saveAllPVPData();
     }
 }

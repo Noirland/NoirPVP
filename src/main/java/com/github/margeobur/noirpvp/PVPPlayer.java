@@ -401,4 +401,11 @@ public class PVPPlayer implements ConfigurationSerializable {
             }
         }
     }
+
+    public static void saveAllPVPData() {
+        for(PVPPlayer player: players) {
+            FSDatabase.getInstance().savePlayerPVP(player);
+        }
+    }
+
 }

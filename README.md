@@ -37,6 +37,9 @@ Currently it's not possible to remove jail locations other than by editing the y
  (although the dock and release point can be overridden)
 ### Changelog:
 
+0.1.91:
+  - The plugin now stops jailed players from modifying their inventory
+
 0.1.9:
   - Trials now resume after server stops during a trial.
 
