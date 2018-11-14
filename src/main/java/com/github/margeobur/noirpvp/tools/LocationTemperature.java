@@ -1,4 +1,4 @@
-package com.github.margeobur.noirpvp;
+package com.github.margeobur.noirpvp.tools;
 
 import org.bukkit.Location;
 import org.bukkit.block.Biome;
