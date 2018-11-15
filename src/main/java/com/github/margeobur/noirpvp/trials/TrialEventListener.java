@@ -20,7 +20,7 @@ import java.util.logging.Level;
 public class TrialEventListener implements Listener {
 
     private static final String BROADCAST_PREFIX =
-            ChatColor.GOLD + "[" + ChatColor.RED  + "Trial Announcement" + ChatColor.GOLD + "]" + ChatColor.RESET;
+            ChatColor.GOLD + "[" + ChatColor.RED  + "Trial Announcement" + ChatColor.GOLD + "] " + ChatColor.RESET;
     private static final int NUM_NAMES_DISPLAYED = 4;
 
     @EventHandler

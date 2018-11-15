@@ -118,7 +118,14 @@ public class AdminCommands implements CommandExecutor {
                         return true;
                     }
 
+                    Player thePlayer = Bukkit.getPlayer(args[0]);
+                    if(thePlayer == null) {
+                        sender.sendMessage("No such player found");
+                    }
 
+                    PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(thePlayer.getUniqueId());
+                    TrialManager.getInstance().unjailPlayer(playerPVP);
+                    return true;
                 }
             case SET_DOCK_COMMAND:
                 if(!(sender instanceof Player)) {

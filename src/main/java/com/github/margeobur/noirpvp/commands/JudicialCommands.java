@@ -6,6 +6,7 @@ import com.github.margeobur.noirpvp.trials.TrialManager.VoteResult;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -84,16 +85,17 @@ public class JudicialCommands implements CommandExecutor {
                         StringBuilder message = new StringBuilder();
 
                         message.append(ChatColor.GOLD);
-                        message.append("==============================================================\n");
+                        message.append("=================================\n");
                         message.append("Top Criminals on Noirland\n");
-                        message.append("==============================================================\n");
+                        message.append("=================================\n");
                         message.append(ChatColor.RESET);
 
                         int i = 0;
                         List<PVPPlayer> criminals = PVPPlayer.getTopCriminals();
                         for(PVPPlayer criminal: criminals) {
-                            message.append(i++).append(": ").append(criminal.getPlayer().getDisplayName())
-                            .append(" - ").append(criminal.getCrimeMarks());
+                            OfflinePlayer crimPlayer = Bukkit.getOfflinePlayer(criminal.getID());
+                            message.append(i++).append(": ").append(crimPlayer.getName())
+                            .append(" - ").append(criminal.getCrimeMarks()).append("\n");
                         }
 
                         sender.sendMessage(message.toString());
@@ -102,15 +104,24 @@ public class JudicialCommands implements CommandExecutor {
                     } else {
                         Player lookupPlayer = Bukkit.getPlayer(args[0]);
                         if(lookupPlayer == null) {
+                            List<PVPPlayer> criminals = PVPPlayer.getTopCriminals();
+                            for(PVPPlayer criminal: criminals) {
+                                OfflinePlayer crimPlayer = Bukkit.getOfflinePlayer(criminal.getID());
+                                if(crimPlayer.getName().toLowerCase().contains(args[0].toLowerCase())) {
+                                    sender.sendMessage("Player " + crimPlayer.getName() +
+                                            " has " + criminal.getCrimeMarks() + " crime marks.");
+                                    return true;
+                                }
+                            }
                             sender.sendMessage(ChatColor.RED + "Player not found");
                             return true;
+                        } else {
+                            PVPPlayer lookupPlayerPVP = PVPPlayer.getPlayerByUUID(lookupPlayer.getUniqueId());
+
+                            sender.sendMessage("Player " + lookupPlayer.getDisplayName() +
+                                    " has " + lookupPlayerPVP.getCrimeMarks() + " crime marks.");
+                            return true;
                         }
-
-                        PVPPlayer lookupPlayerPVP = PVPPlayer.getPlayerByUUID(lookupPlayer.getUniqueId());
-
-                        sender.sendMessage("Player " + lookupPlayer.getDisplayName() +
-                                " has " + lookupPlayerPVP.getCrimeMarks() + " crime marks.");
-                        return true;
                     }
                 }
         }

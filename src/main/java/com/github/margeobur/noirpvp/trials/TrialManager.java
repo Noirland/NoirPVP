@@ -138,6 +138,15 @@ public class TrialManager {
         trialEndTask.runTaskLater(NoirPVPPlugin.getInstance(), durationInTicks);
     }
 
+    public void unjailPlayer(PVPPlayer playerPVP) {
+        for(Trial trial: releaseTrials) {
+            if(trial.getDefendant().equals(playerPVP)) {
+                trial.releasePlayer();
+                releaseTrials.remove(trial);
+            }
+        }
+    }
+
     private void scheduleJailRelease(Trial finishedTrial, int alreadyServed) {
         BukkitRunnable jailReleaseTask = new BukkitRunnable() {
             @Override

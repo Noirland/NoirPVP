@@ -37,7 +37,7 @@ public class JailTrial extends Trial {
         }
         int maxInd = 0;
         for(int i = 0; i < voteCounts.length; i++) {
-            if(voteCounts[i] > voteCounts[0]) {
+            if(voteCounts[i] > voteCounts[maxInd]) {
                 maxInd = i;
             }
         }

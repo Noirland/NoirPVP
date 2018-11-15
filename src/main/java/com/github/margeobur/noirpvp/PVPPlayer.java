@@ -173,6 +173,9 @@ public class PVPPlayer implements ConfigurationSerializable {
         Duration timeLoggedOff = Duration.between(logOnTime, logOffTime);
         secondsLoggedOff += Math.abs(timeLoggedOff.getSeconds());
 
+//        System.out.println("logoff time: " + logOffTime);
+//        System.out.println("seconds logged off: " + secondsLoggedOff);
+
         Duration timeBetweenDeathLogoff = Duration.between(lastDeath, logOffTime);
         long secondsBetweenDeathLogoff = Math.abs(timeBetweenDeathLogoff.getSeconds());
 
@@ -386,9 +389,10 @@ public class PVPPlayer implements ConfigurationSerializable {
 
     public static List<PVPPlayer> getTopCriminals() {
         saveAllPVPData();
-        List<PVPPlayer> allPlayers = FSDatabase.getInstance().getAllPlayers();
+        List<PVPPlayer> allPlayers = FSDatabase.getInstance().getPlayers(10);
 
         Collections.sort(allPlayers, Comparator.comparingInt(PVPPlayer::getCrimeMarks));
+        Collections.reverse(allPlayers);
         return allPlayers;
     }
 

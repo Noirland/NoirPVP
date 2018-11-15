@@ -92,25 +92,6 @@ public class Trial implements ConfigurationSerializable {
         }
     }
 
-    void releasePlayer() {
-        defendant.releaseFromJail();
-
-        TrialEvent trialResolvedEvent = new TrialEvent(TrialEvent.TrialEventType.RELEASE, this);
-        Bukkit.getServer().getPluginManager().callEvent(trialResolvedEvent);
-    }
-
-    public boolean getIsGuiltyVerdict() {
-        return isGuilty;
-    }
-
-    public int getJailTimeSeconds() {
-        return (defendant.getCrimeMarks() / 5) * NoirPVPConfig.CRIME_MARK_MULTIPLIER * 60;
-}
-
-    public boolean playerHasVoted(UUID voterID) {
-        return voteMap.containsKey(voterID);
-    }
-
     public void addVote(UUID voterID, boolean isGuiltyVote) {
         if(!voteMap.containsKey(voterID)) {
             voteMap.put(voterID, isGuiltyVote);
@@ -120,6 +101,25 @@ public class Trial implements ConfigurationSerializable {
                 innocentVotes++;
             }
         }
+    }
+
+    public boolean getIsGuiltyVerdict() {
+        return isGuilty;
+    }
+
+    void releasePlayer() {
+        defendant.releaseFromJail();
+
+        TrialEvent trialResolvedEvent = new TrialEvent(TrialEvent.TrialEventType.RELEASE, this);
+        Bukkit.getServer().getPluginManager().callEvent(trialResolvedEvent);
+    }
+
+    public int getJailTimeSeconds() {
+        return (defendant.getCrimeMarks() / 5) * NoirPVPConfig.CRIME_MARK_MULTIPLIER * 60;
+}
+
+    public boolean playerHasVoted(UUID voterID) {
+        return voteMap.containsKey(voterID);
     }
 
     public Trial(Map<String, Object> serialMap) {
