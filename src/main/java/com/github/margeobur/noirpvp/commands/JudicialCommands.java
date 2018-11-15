@@ -92,7 +92,8 @@ public class JudicialCommands implements CommandExecutor {
                         int i = 0;
                         List<PVPPlayer> criminals = PVPPlayer.getTopCriminals();
                         for(PVPPlayer criminal: criminals) {
-                            message.append(i++).append(": ").append(criminal.getPlayer().getDisplayName());
+                            message.append(i++).append(": ").append(criminal.getPlayer().getDisplayName())
+                            .append(" - ").append(criminal.getCrimeMarks());
                         }
 
                         sender.sendMessage(message.toString());

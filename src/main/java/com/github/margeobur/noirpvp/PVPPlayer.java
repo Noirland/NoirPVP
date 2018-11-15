@@ -385,13 +385,11 @@ public class PVPPlayer implements ConfigurationSerializable {
     }
 
     public static List<PVPPlayer> getTopCriminals() {
-        Collections.sort(players, Comparator.comparingInt(PVPPlayer::getCrimeMarks));
-        List<PVPPlayer> playersCopy = new ArrayList<>();
+        saveAllPVPData();
+        List<PVPPlayer> allPlayers = FSDatabase.getInstance().getAllPlayers();
 
-        for(int i = 0; i < 10 && i < players.size(); i++) {
-            playersCopy.add(players.get(i));
-        }
-        return playersCopy;
+        Collections.sort(allPlayers, Comparator.comparingInt(PVPPlayer::getCrimeMarks));
+        return allPlayers;
     }
 
     public static void pauseAllCooldowns() {

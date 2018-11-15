@@ -27,6 +27,7 @@ import java.util.UUID;
 public class AdminCommands implements CommandExecutor {
 
     private static final String JAIL_COMMAND = "njail";
+    private static final String UNJAIL_COMMAND = "nunjail";
     private static final String BAN_COMMAND = "nban";
     private static final String KICK_COMMAND = "nkick";
     private static final String SET_DOCK_COMMAND = "setdock";
@@ -110,6 +111,15 @@ public class AdminCommands implements CommandExecutor {
                     return true;
                 }
                 break;
+            case UNJAIL_COMMAND:
+                if(sender instanceof Player) {
+                    if(!sender.hasPermission("noirpvp.jail")) {
+                        sender.sendMessage("You do not have permission to unjail players");
+                        return true;
+                    }
+
+
+                }
             case SET_DOCK_COMMAND:
                 if(!(sender instanceof Player)) {
                     sender.sendMessage("You must use this command as a player so that the location can be found");

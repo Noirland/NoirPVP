@@ -19,6 +19,8 @@ A reason must be provided.
 Use /njail addcell to add a jail cell. The first jail cell can be populated by as many
 players as needed, subsequently added cells will all contain a single jailed player.
 
+Use /nunjail <playername> to cancel the sentence of a player
+
 Use /setdock to set the "Courthouse dock", the place where players are teleported to when
 they are put on trial.
 
@@ -28,7 +30,7 @@ This defaults to the world spawn - I can change that later.
 #### Permissions:
 
  - noirpvp.vote: allows players to vote in trials. Jailed players are automatically blocked from voting by the plugin
- - noirpvp.jail: allows admins to initiate discipline trials (use /njail \<playername> \<reason>)
+ - noirpvp.jail: allows admins to initiate discipline trials (use /njail \<playername> \<reason>). Also lets admins unjail players
  - noirpvp.setlocations: allows admins to add locations for jail cells, the dock and the release point
  
 #### Notes:

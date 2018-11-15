@@ -56,6 +56,21 @@ public class FSDatabase {
         database.set(player.getID().toString(), player);
     }
 
+    public List<PVPPlayer> getAllPlayers() {
+        List<PVPPlayer> players = new ArrayList<>();
+        Set<String> keys = database.getKeys(false);
+        for(String key: keys) {
+            try {
+                UUID.fromString(key);
+            } catch(IllegalArgumentException e) {
+                continue; // if the key isn't a UUID, just skip it
+            }
+            PVPPlayer pvpPlayer = (PVPPlayer) database.get(key);
+            players.add(pvpPlayer);
+        }
+        return players;
+    }
+
     public Map<UUID, Integer> getJailShortlist() {
         if(database.contains("jail-shortlist")) {
             Map<UUID, Integer> convictIDs = new HashMap<>();

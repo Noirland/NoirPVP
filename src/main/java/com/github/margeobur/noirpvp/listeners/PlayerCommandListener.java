@@ -20,6 +20,9 @@ public class PlayerCommandListener implements Listener {
     public void onCommandUse(PlayerCommandPreprocessEvent event)
     {
         String command = event.getMessage();
+        if(event.getPlayer().isOp()) {
+            return;
+        }
         PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(event.getPlayer().getUniqueId());
         if(playerPVP.isJailed() || playerPVP.equals(TrialManager.getInstance().currentDefendant())) {
             event.getPlayer().sendMessage("You may not use commands while jailed or on trial.");
@@ -28,12 +31,10 @@ public class PlayerCommandListener implements Listener {
         if(command.equalsIgnoreCase("/back")) {
             PVPPlayer playerInfo = PVPPlayer.getPlayerByUUID(event.getPlayer().getUniqueId());
 
-            if(!event.getPlayer().isOp()) {
-                if (playerInfo != null && !playerInfo.canBack()) {
-                    event.getPlayer().sendMessage("You cannot use /back unless you have just died. You may " +
-                            "not use /back after dying in PVP twice in a short period of time.");
-                    event.setCancelled(true);
-                }
+            if (playerInfo != null && !playerInfo.canBack()) {
+                event.getPlayer().sendMessage("You cannot use /back unless you have just died. You may " +
+                        "not use /back after dying in PVP twice in a short period of time.");
+                event.setCancelled(true);
             }
         }
 //        } else if(command.equalsIgnoreCase("/kick") || command.equalsIgnoreCase("/ban")) {

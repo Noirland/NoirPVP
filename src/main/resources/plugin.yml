@@ -18,7 +18,10 @@ commands:
     usage: Use "/crime" to see how many crime marks you have. Use "/crime top" to see the players with the most crimes. Use "/crime <player name>" to see how many crimes a particular player has.
   njail:
     description: Allows admins to detain a player and initiate a vote to enact discipline. Allows players to vote in a trial
-    usage: User "/njail <playername> <reason>" to jail a player. Use "/njail addcell" to set the current location as warp point for criminals
+    usage: Use "/njail <playername> <reason>" to jail a player. Use "/njail addcell" to set the current location as warp point for criminals
+  nunjail:
+    description: Allows admins to remove players from jail and end their sentence early
+    usage: Use "/nunjail <playername> to cancel a player's sentence
   nkick:
     description: Allows players to vote for a player to be kicked
     usage: /nkick to cast a vote to kick the player on trial

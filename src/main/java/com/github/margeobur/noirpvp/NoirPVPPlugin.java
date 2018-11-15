@@ -50,6 +50,7 @@ public class NoirPVPPlugin extends JavaPlugin {
         getCommand("nban").setExecutor(adminCH);
         getCommand("setdock").setExecutor(adminCH);
         getCommand("setrelease").setExecutor(adminCH);
+        getCommand("nunjail").setExecutor(adminCH);
         //this.getCommand("jail").setExecutor(commandHandler);
 
         if(TrialManager.getInstance() == null) {

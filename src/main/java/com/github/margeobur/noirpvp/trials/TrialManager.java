@@ -20,6 +20,7 @@ public class TrialManager {
     public enum VoteResult { NO_TRIAL, ALREADY_VOTED, NOT_ALLOWED, WRONG_TYPE, SUCCESS }
 
     private Deque<Trial> trials = new ArrayDeque<>();
+    private List<Trial> cancelledSentences = new ArrayList<>();
     private List<Trial> offlineTrials = new ArrayList<>();
     private List<Trial> releaseTrials = new ArrayList<>();
 
@@ -141,8 +142,10 @@ public class TrialManager {
         BukkitRunnable jailReleaseTask = new BukkitRunnable() {
             @Override
             public void run() {
-                finishedTrial.releasePlayer();
-                releaseTrials.remove(finishedTrial);
+                if(!finishedTrial.getDefendant().isJailed()) {
+                    finishedTrial.releasePlayer();
+                    releaseTrials.remove(finishedTrial);
+                }
             }
         };
         
