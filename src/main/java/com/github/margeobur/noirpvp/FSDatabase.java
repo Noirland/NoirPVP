@@ -56,10 +56,9 @@ public class FSDatabase {
         database.set(player.getID().toString(), player);
     }
 
-    public List<PVPPlayer> getPlayers(int numberToGet) {
+    public List<PVPPlayer> getAllPlayers() {
         List<PVPPlayer> players = new ArrayList<>();
         Set<String> keys = database.getKeys(false);
-        int numberFetched = 0;
         for(String key: keys) {
             try {
                 UUID.fromString(key);
@@ -68,10 +67,6 @@ public class FSDatabase {
             }
             PVPPlayer pvpPlayer = (PVPPlayer) database.get(key);
             players.add(pvpPlayer);
-            numberFetched++;
-            if(numberFetched == numberToGet) {
-                break;
-            }
         }
         return players;
     }

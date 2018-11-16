@@ -389,7 +389,7 @@ public class PVPPlayer implements ConfigurationSerializable {
 
     public static List<PVPPlayer> getTopCriminals() {
         saveAllPVPData();
-        List<PVPPlayer> allPlayers = FSDatabase.getInstance().getPlayers(10);
+        List<PVPPlayer> allPlayers = FSDatabase.getInstance().getAllPlayers();
 
         Collections.sort(allPlayers, Comparator.comparingInt(PVPPlayer::getCrimeMarks));
         Collections.reverse(allPlayers);

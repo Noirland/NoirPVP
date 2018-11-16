@@ -90,12 +90,15 @@ public class JudicialCommands implements CommandExecutor {
                         message.append("=================================\n");
                         message.append(ChatColor.RESET);
 
-                        int i = 0;
+                        int i = 1;
                         List<PVPPlayer> criminals = PVPPlayer.getTopCriminals();
                         for(PVPPlayer criminal: criminals) {
                             OfflinePlayer crimPlayer = Bukkit.getOfflinePlayer(criminal.getID());
                             message.append(i++).append(": ").append(crimPlayer.getName())
                             .append(" - ").append(criminal.getCrimeMarks()).append("\n");
+                            if(i == 10) {
+                                break;
+                            }
                         }
 
                         sender.sendMessage(message.toString());
