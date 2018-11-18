@@ -54,6 +54,7 @@ public class FSDatabase {
 
     public void savePlayerPVP(PVPPlayer player) {
         database.set(player.getID().toString(), player);
+        saveDatabase();
     }
 
     public List<PVPPlayer> getAllPlayers() {
@@ -94,11 +95,12 @@ public class FSDatabase {
             convictIDStrs.put(convictID.toString(), convictIDs.get(convictID));
         }
         database.createSection("jail-shortlist", convictIDStrs);
+        saveDatabase();
     }
 
     public void saveJailTrials(List<JailTrial> trials, String path) {
         database.set(path, trials);
-        NoirPVPPlugin.getInstance().saveConfig();
+        saveDatabase();
     }
 
     public List<JailTrial> getJailTrials(String path) {
@@ -109,7 +111,7 @@ public class FSDatabase {
 
     public void saveTrials(List<Trial> trials, String path) {
         database.set(path, trials);
-        NoirPVPPlugin.getInstance().saveConfig();
+        saveDatabase();
     }
 
     public List<Trial> getTrials(String path) {
@@ -118,7 +120,7 @@ public class FSDatabase {
         return trials;
     }
 
-    private void reloadDatabase() {
+    public void reloadDatabase() {
         if (databaseFile == null) {
             databaseFile = new File(NoirPVPPlugin.getInstance().getDataFolder(), dbFilename);
             if(!databaseFile.exists()) {

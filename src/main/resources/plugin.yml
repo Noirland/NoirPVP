@@ -1,5 +1,5 @@
 name: NoirPVP
-version: 0.2.0
+version: 0.2.1
 main: com.github.margeobur.noirpvp.NoirPVPPlugin
 author: margeobur
 description: PVP management for Noirland, 2018+
@@ -36,6 +36,9 @@ commands:
     description: Sets the location that players found innocent will be teleported to after a trial
     usage: Use "/setrelease" to set your current location as THE release point for innocent players
     permission: noirpvp.setlocations
+  noirpvp:
+    description: Command for overriding the plugin config
+    usage: Use "/noirpvp reload config" to reload the config, "/noirpvp reload database" to reload the database, "/noirpvp saveall" to save all data
 permissions:
   noirpvp.vote:
     description: Allows players to use /innocent, /guilty,  to vote in trials. (/nban and /nkick for admin trials)

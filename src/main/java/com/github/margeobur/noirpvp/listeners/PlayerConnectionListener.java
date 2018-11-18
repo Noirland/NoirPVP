@@ -26,7 +26,7 @@ import java.util.logging.Level;
 public class PlayerConnectionListener implements Listener {
 
     // the time to wait before committing the player data to disk and removing from memory
-    private static final int WAIT_TIME_BEFORE_SAVING = 5;
+    private static final int WAIT_TIME_BEFORE_SAVING = 2;
 
     public PlayerConnectionListener() { }
 

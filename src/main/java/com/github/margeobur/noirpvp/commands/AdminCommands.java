@@ -112,21 +112,21 @@ public class AdminCommands implements CommandExecutor {
                 }
                 break;
             case UNJAIL_COMMAND:
-                if(sender instanceof Player) {
-                    if(!sender.hasPermission("noirpvp.jail")) {
-                        sender.sendMessage("You do not have permission to unjail players");
-                        return true;
-                    }
-
-                    Player thePlayer = Bukkit.getPlayer(args[0]);
-                    if(thePlayer == null) {
-                        sender.sendMessage("No such player found");
-                    }
-
-                    PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(thePlayer.getUniqueId());
-                    TrialManager.getInstance().unjailPlayer(playerPVP);
+                if(sender instanceof Player && !sender.hasPermission("noirpvp.jail")) {
+                    sender.sendMessage("You do not have permission to unjail players");
                     return true;
                 }
+
+                Player thePlayer = Bukkit.getPlayer(args[0]);
+                if(thePlayer == null) {
+                    sender.sendMessage("No such player found");
+                    return true;
+                }
+
+                PVPPlayer playerPVP = PVPPlayer.getPlayerByUUID(thePlayer.getUniqueId());
+                playerPVP.releaseFromJail();
+                TrialManager.getInstance().unjailPlayer(playerPVP);
+                return true;
             case SET_DOCK_COMMAND:
                 if(!(sender instanceof Player)) {
                     sender.sendMessage("You must use this command as a player so that the location can be found");

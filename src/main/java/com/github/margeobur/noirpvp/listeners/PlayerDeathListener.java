@@ -34,6 +34,10 @@ public class PlayerDeathListener implements Listener {
         if(playerInfo.getLastPVP() == null) {
             return;
         }
+        if (playerInfo.getLastPVP() == null) {
+            playerInfo.doRegularDeath();
+            return;
+        }
         LocalDateTime pvpDeactivationTime = playerInfo.getLastPVP().plusSeconds(5);
         if(currentTime.isBefore(pvpDeactivationTime)) {
             doPVPDeath(event, playerInfo);

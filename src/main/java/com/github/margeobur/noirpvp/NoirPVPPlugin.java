@@ -2,13 +2,19 @@ package com.github.margeobur.noirpvp;
 
 import com.github.margeobur.noirpvp.commands.AdminCommands;
 import com.github.margeobur.noirpvp.commands.JudicialCommands;
+import com.github.margeobur.noirpvp.commands.OverrideCommands;
 import com.github.margeobur.noirpvp.listeners.*;
+import com.github.margeobur.noirpvp.tools.Recipes;
+import com.github.margeobur.noirpvp.tools.TemperatureChecker;
 import com.github.margeobur.noirpvp.trials.JailCell;
 import com.github.margeobur.noirpvp.trials.TrialEventListener;
 import com.github.margeobur.noirpvp.trials.TrialManager;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Level;
@@ -20,6 +26,7 @@ import java.util.logging.Level;
 public class NoirPVPPlugin extends JavaPlugin {
 
     private static NoirPVPPlugin instance;
+    private TemperatureChecker tempChecker;
 
     public static NoirPVPPlugin getInstance() {
         return instance;
@@ -52,12 +59,19 @@ public class NoirPVPPlugin extends JavaPlugin {
         getCommand("setrelease").setExecutor(adminCH);
         getCommand("nunjail").setExecutor(adminCH);
         //this.getCommand("jail").setExecutor(commandHandler);
+        getCommand("noirpvp").setExecutor(new OverrideCommands());
 
         if(TrialManager.getInstance() == null) {
             getLogger().log(Level.SEVERE, "Could not resume trials");
         }
         JailCell.refreshJailShortlist();
+
+        Recipes.createWinterBoots();
+
+        tempChecker = new TemperatureChecker();
+        tempChecker.start();
     }
+
     @Override
     public void onDisable() {
         JailCell.saveJailShortlist();

@@ -45,6 +45,15 @@ public class NoirPVPConfig {
     public void initConfig() {
         NoirPVPPlugin.getInstance().saveDefaultConfig();
         ConfigurationSerialization.registerClass(JailCell.class, "JailCell");
+        copyConfigToMem();
+    }
+
+    public void reload() {
+        NoirPVPPlugin.getInstance().reloadConfig();
+        copyConfigToMem();
+    }
+
+    private void copyConfigToMem() {
         FileConfiguration config = NoirPVPPlugin.getInstance().getConfig();
 
         PROTECTION_DURATION = config.getInt("first-protection-duration");

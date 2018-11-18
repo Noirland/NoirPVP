@@ -129,6 +129,7 @@ public class TrialManager {
                    !(currentTrial instanceof JailTrial) &&
                         currentTrial.getIsGuiltyVerdict()) {
                     scheduleJailRelease(currentTrial, 0);
+                    releaseTrials.add(currentTrial);
                 }
                 tryDoNextTrial();
             }
@@ -143,6 +144,7 @@ public class TrialManager {
             if(trial.getDefendant().equals(playerPVP)) {
                 trial.releasePlayer();
                 releaseTrials.remove(trial);
+                return;
             }
         }
     }
@@ -151,7 +153,11 @@ public class TrialManager {
         BukkitRunnable jailReleaseTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if(!finishedTrial.getDefendant().isJailed()) {
+                if(finishedTrial.getDefendant().getPlayer() == null || !finishedTrial.getDefendant().getPlayer().isOnline()) {
+                    //cooldowns and jail time will have been paused when the player went offline
+                    return;
+                }
+                if(finishedTrial.getDefendant().isJailed()) {
                     finishedTrial.releasePlayer();
                     releaseTrials.remove(finishedTrial);
                 }
@@ -261,9 +267,16 @@ public class TrialManager {
                     return;
                 }
 
+                for(Trial trial: releaseTrials) {
+                    if(trial.getDefendant().equals(convictPVP)) {
+                        scheduleJailRelease(trial, (int) convictPVP.getTimeAlreadyServed());
+                        return;
+                    }
+                }
+
                 LocalDateTime lastConviction = convictPVP.getLastConviction();
                 Trial finishedTrial;
-                if(convictPVP.wasAdminJailed()) {
+                if (convictPVP.wasAdminJailed()) {
                     finishedTrial = new JailTrial(convictPVP, "", lastConviction.minusMinutes(1));
                 } else {
                     finishedTrial = new Trial(convictPVP, lastConviction.minusMinutes(1));

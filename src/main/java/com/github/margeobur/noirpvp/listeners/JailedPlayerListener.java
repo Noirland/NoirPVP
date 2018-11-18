@@ -127,7 +127,7 @@ public class JailedPlayerListener implements Listener {
             PVPPlayer possibleDefendant = TrialManager.getInstance().currentDefendant();
             if(possibleDefendant != null && possibleDefendant.getID().equals(player.getUniqueId())) {
                 return true;
-            } else if(playerPVP.isJailed() && JailCell.playerOnShortlist(player.getUniqueId())) {
+            } else if(playerPVP.isJailed()) {
                 return true;
             }
         }
