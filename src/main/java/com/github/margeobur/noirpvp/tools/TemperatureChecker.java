@@ -53,6 +53,10 @@ public class TemperatureChecker extends BukkitRunnable {
                     ticksUntilStarve = 200;
                 }
 
+                if(temperature > 1) {
+
+                }
+
                 int ticksPerHungerIncrease = (int) ticksUntilStarve / 20;
                 playerHungerRates.put(player.getUniqueId(), ticksPerHungerIncrease);
             }

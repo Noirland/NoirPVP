@@ -14,7 +14,7 @@ import java.util.List;
 
 public class Recipes {
 
-    private static void addRecipes() {
+    public static void addRecipes() {
         Plugin thePlugin = NoirPVPPlugin.getInstance();
 
         ShapedRecipe wBootsRecipe = new ShapedRecipe(new NamespacedKey(thePlugin, "winterBoots"),

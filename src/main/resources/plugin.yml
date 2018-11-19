@@ -4,6 +4,7 @@ main: com.github.margeobur.noirpvp.NoirPVPPlugin
 author: margeobur
 description: PVP management for Noirland, 2018+
 depend: [GriefPrevention]
+api-version: 1.13
 commands:
   innocent:
     description: Casts a vote in the current trial, declaring the defendant as INNOCENT.

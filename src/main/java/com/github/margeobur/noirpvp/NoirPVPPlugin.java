@@ -66,7 +66,7 @@ public class NoirPVPPlugin extends JavaPlugin {
         }
         JailCell.refreshJailShortlist();
 
-        Recipes.createWinterBoots();
+        Recipes.addRecipes();
 
         tempChecker = new TemperatureChecker();
         tempChecker.start();
