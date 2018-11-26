@@ -46,6 +46,7 @@ public class NoirPVPPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerCommandListener(), this);
         getServer().getPluginManager().registerEvents(new TrialEventListener(), this);
         getServer().getPluginManager().registerEvents(new JailedPlayerListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerCraftListener(), this);
 
         JudicialCommands commandHandler = new JudicialCommands();
         getCommand("innocent").setExecutor(commandHandler);

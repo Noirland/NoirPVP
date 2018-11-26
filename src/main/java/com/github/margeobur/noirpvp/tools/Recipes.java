@@ -17,109 +17,76 @@ public class Recipes {
     public static void addRecipes() {
         Plugin thePlugin = NoirPVPPlugin.getInstance();
 
-        ShapedRecipe wBootsRecipe = new ShapedRecipe(new NamespacedKey(thePlugin, "winterBoots"),
-                createWinterBoots());
-        wBootsRecipe.shape("%*%","%*%");
-        wBootsRecipe.setIngredient('*', Material.AIR);
-        wBootsRecipe.setIngredient('%', Material.WHITE_WOOL);
-        thePlugin.getServer().addRecipe(wBootsRecipe);
+        addSnowArmour(createSnowBoots(), "snowBoots", Material.LEATHER_BOOTS);
+        addSnowArmour(createSnowLeggings(), "snowLeggings", Material.LEATHER_LEGGINGS);
+        addSnowArmour(createSnowChestPiece(), "snowChestpiece", Material.LEATHER_CHESTPLATE);
+        addSnowArmour(createSnowHat(), "snowHat", Material.LEATHER_HELMET);
 
-        ShapedRecipe wLegsRecipe = new ShapedRecipe(new NamespacedKey(thePlugin, "winterLeggings"),
-                createWinterLeggings());
-        wLegsRecipe.shape("%%%", "%*%", "%*%");
-        wLegsRecipe.setIngredient('*', Material.AIR);
-        wLegsRecipe.setIngredient('%', Material.WHITE_WOOL);
-        thePlugin.getServer().addRecipe(wLegsRecipe);
-
-        ShapedRecipe wJacketRecipe = new ShapedRecipe(new NamespacedKey(thePlugin, "winterJacket"),
-                createWinterJacket());
-        wJacketRecipe.shape("%*%", "%%%", "%%%");
-        wJacketRecipe.setIngredient('*', Material.AIR);
-        wJacketRecipe.setIngredient('%', Material.WHITE_WOOL);
-        thePlugin.getServer().addRecipe(wJacketRecipe);
-
-        ShapedRecipe wBeanieRecipe = new ShapedRecipe(new NamespacedKey(thePlugin, "winterBeanie"),
-                createWinterBeanie());
-        wBeanieRecipe.shape("%%%", "%*%");
-        wBeanieRecipe.setIngredient('*', Material.AIR);
-        wBeanieRecipe.setIngredient('%', Material.WHITE_WOOL);
-        thePlugin.getServer().addRecipe(wBeanieRecipe);
-
-
-        ShapedRecipe sSneakersRecipe = new ShapedRecipe(new NamespacedKey(thePlugin, "summerSneakers"),
-                createSneakers());
-        sSneakersRecipe.shape("%*%", "#*#");
-        sSneakersRecipe.setIngredient('*', Material.AIR);
-        sSneakersRecipe.setIngredient('%', Material.STRING);
-        sSneakersRecipe.setIngredient('#', Material.LEATHER);
-        thePlugin.getServer().addRecipe(sSneakersRecipe);
-
-        ShapedRecipe sShortsRecipe = new ShapedRecipe(new NamespacedKey(thePlugin, "summerShorts"),
-                createShorts());
-        sShortsRecipe.shape("%%%", "#*#", "#*#");
-        sShortsRecipe.setIngredient('*', Material.AIR);
-        sShortsRecipe.setIngredient('%', Material.STRING);
-        sShortsRecipe.setIngredient('#', Material.LEATHER);
-        thePlugin.getServer().addRecipe(sShortsRecipe);
-
-        ShapedRecipe sShirtRecipe = new ShapedRecipe(new NamespacedKey(thePlugin, "summerShirt"),
-                createCottonShirt());
-        sShirtRecipe.shape("%*%", "###" ,"%%%");
-        sShirtRecipe.setIngredient('*', Material.AIR);
-        sShirtRecipe.setIngredient('%', Material.STRING);
-        sShirtRecipe.setIngredient('#', Material.LEATHER);
-        thePlugin.getServer().addRecipe(sShirtRecipe);
-
-        ShapedRecipe sSunhatRecipe = new ShapedRecipe(new NamespacedKey(thePlugin, "summerSunhat"),
-                createSunhat());
-        sSunhatRecipe.shape("###", "%*%");
-        sSunhatRecipe.setIngredient('*', Material.AIR);
-        sSunhatRecipe.setIngredient('%', Material.STRING);
-        sSunhatRecipe.setIngredient('#', Material.WHEAT);
-        thePlugin.getServer().addRecipe(sSunhatRecipe);
+        addDesertArmour(createDesertBoots(), "desertBoots", Material.LEATHER_BOOTS);
+        addDesertArmour(createDesertLeggings(), "desertLeggings", Material.LEATHER_LEGGINGS);
+        addDesertArmour(createDesertChestPiece(), "desertChestpiece", Material.LEATHER_CHESTPLATE);
+        addDesertArmour(createDesertHat(), "desertHat", Material.LEATHER_HELMET);
     }
 
-    public static ItemStack createWinterBoots() {
-        return createWinterItem("Winter Boots", Material.LEATHER_BOOTS);
+    private static void addSnowArmour(ItemStack result, String key, Material centralPiece) {
+        ShapedRecipe snowArmourRecipe = new ShapedRecipe(new NamespacedKey(NoirPVPPlugin.getInstance(), key),
+                result);
+        snowArmourRecipe.shape("%%%","%#%", "%%%");
+        snowArmourRecipe.setIngredient('%', Material.SNOW_BLOCK);
+        snowArmourRecipe.setIngredient('#', centralPiece);
+        NoirPVPPlugin.getInstance().getServer().addRecipe(snowArmourRecipe);
     }
 
-    public static ItemStack createWinterLeggings() {
-        return createWinterItem("Winter Leggings", Material.LEATHER_LEGGINGS);
+    private static void addDesertArmour(ItemStack result, String key, Material centralPiece) {
+        ShapedRecipe desertArmourRecipe = new ShapedRecipe(new NamespacedKey(NoirPVPPlugin.getInstance(), key),
+                result);
+        desertArmourRecipe.shape("%%%", "%#%", "%%%");
+        desertArmourRecipe.setIngredient('%', Material.NETHERRACK);
+        desertArmourRecipe.setIngredient('#', centralPiece);
+        NoirPVPPlugin.getInstance().getServer().addRecipe(desertArmourRecipe);
     }
 
-    public static ItemStack createWinterJacket() {
-        return createWinterItem("Winter Jacket", Material.LEATHER_CHESTPLATE);
+    public static ItemStack createSnowBoots() {
+        return createArmour("Snow Armour Boots", "Protects against the cold.",
+                Material.LEATHER_BOOTS, Color.WHITE);
     }
 
-    public static ItemStack createWinterBeanie() {
-        return createWinterItem("Winter Beanie", Material.LEATHER_HELMET);
+    public static ItemStack createSnowLeggings() {
+        return createArmour("Snow Armour Leggings", "Protects against the cold.",
+                Material.LEATHER_LEGGINGS, Color.WHITE);
     }
 
-    private static ItemStack createWinterItem(String name, Material armourType) {
-        return createArmourItem(name, armourType, "Protects against the cold.", Color.WHITE);
+    public static ItemStack createSnowChestPiece() {
+        return createArmour("Snow Armour Chestpiece", "Protects against the cold.",
+                Material.LEATHER_CHESTPLATE, Color.WHITE);
     }
 
-    public static ItemStack createSneakers() {
-        return createSummerItem("Summer Sneakers", Material.LEATHER_BOOTS);
+    public static ItemStack createSnowHat() {
+        return createArmour("Snow Armour Hat", "Protects against the cold.",
+                Material.LEATHER_HELMET, Color.WHITE);
     }
 
-    public static ItemStack createShorts() {
-        return createSummerItem("Summer Shorts", Material.LEATHER_LEGGINGS);
+    public static ItemStack createDesertBoots() {
+        return createArmour("Desert Armour Boots", "Protects against the heat.",
+                Material.LEATHER_BOOTS, Color.RED);
     }
 
-    public static ItemStack createCottonShirt() {
-        return createSummerItem("Summer Shirt", Material.LEATHER_CHESTPLATE);
+    public static ItemStack createDesertLeggings() {
+        return createArmour("Desert Armour Leggings", "Protects against the heat.",
+                Material.LEATHER_LEGGINGS, Color.RED);
     }
 
-    public static ItemStack createSunhat() {
-        return createSummerItem("Summer Sunhat", Material.LEATHER_HELMET);
+    public static ItemStack createDesertChestPiece() {
+        return createArmour("Desert Armour Chestpiece", "Protects against the heat.",
+                Material.LEATHER_CHESTPLATE, Color.RED);
     }
 
-    private static ItemStack createSummerItem(String name, Material armourType) {
-        return createArmourItem(name, armourType, "Protects against the heat.", Color.OLIVE);
+    public static ItemStack createDesertHat() {
+        return createArmour("Desert Armour Hat", "Protects against the heat.",
+                Material.LEATHER_HELMET, Color.RED);
     }
 
-    private static ItemStack createArmourItem(String name, Material armourType, String loreString, Color colour) {
+    public static ItemStack createArmour(String name, String loreString, Material armourType, Color colour) {
         ItemStack armourItem = new ItemStack(armourType);
         LeatherArmorMeta armourMeta = (LeatherArmorMeta) armourItem.getItemMeta();
         armourMeta.setColor(colour);

@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
 import java.time.LocalDateTime;
@@ -43,6 +44,14 @@ public class PlayerDeathListener implements Listener {
             doPVPDeath(event, playerInfo);
         } else {
             playerInfo.doRegularDeath();
+        }
+
+        if(event.getEntity().getLastDamageCause().getCause().equals(EntityDamageEvent.DamageCause.STARVATION)) {
+            if(event.getEntity().getLocation().getBlock().getTemperature() >= 1.1) {
+                event.setDeathMessage(event.getEntity().getDisplayName() + " succumbed to heat stroke.");
+            } else if(event.getEntity().getLocation().getBlock().getTemperature() <=  0.05) {
+                event.setDeathMessage(event.getEntity().getDisplayName() + " froze to death.");
+            }
         }
     }
 

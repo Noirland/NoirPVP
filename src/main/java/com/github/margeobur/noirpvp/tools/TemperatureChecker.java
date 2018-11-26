@@ -2,7 +2,10 @@ package com.github.margeobur.noirpvp.tools;
 
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -53,8 +56,77 @@ public class TemperatureChecker extends BukkitRunnable {
                     ticksUntilStarve = 200;
                 }
 
-                if(temperature > 1) {
+                int weatherArmourFlags = 0; // each bit is a boolean set to true if the corresponding armour type is
+                // present on the player
 
+                if(player.getInventory().getBoots()!= null &&
+                        player.getInventory().getBoots().getType().equals(Material.LEATHER_BOOTS)) {
+                    ItemMeta bootsMeta = player.getInventory().getBoots().getItemMeta();
+                    if(bootsMeta.hasLore()) {
+                        List<String> lore = bootsMeta.getLore();
+                        if(lore.size() > 0 &&
+                                (lore.get(0).equalsIgnoreCase("protects against the heat."))) {
+                            weatherArmourFlags |= 0b00000001;
+                        } else if(lore.get(0).equalsIgnoreCase("protects against the cold.")) {
+                            weatherArmourFlags |= 0b00010000;
+                        }
+                    }
+                }
+
+                if(player.getInventory().getLeggings()!= null &&
+                    player.getInventory().getLeggings().getType().equals(Material.LEATHER_LEGGINGS)) {
+                    ItemMeta leggingsMeta = player.getInventory().getLeggings().getItemMeta();
+                    if(leggingsMeta.hasLore()) {
+                        List<String> lore = leggingsMeta.getLore();
+                        if(lore.size() > 0 &&
+                                (lore.get(0).equalsIgnoreCase("protects against the heat."))) {
+                            weatherArmourFlags |= 0b00000010;
+                        } else if(lore.get(0).equalsIgnoreCase("protects against the cold.")) {
+                            weatherArmourFlags |= 0b00100000;
+                        }
+                    }
+                }
+
+                if(player.getInventory().getChestplate()!= null &&
+                        player.getInventory().getChestplate().getType().equals(Material.LEATHER_CHESTPLATE)) {
+                    ItemMeta chestPlateMeta = player.getInventory().getChestplate().getItemMeta();
+                    if(chestPlateMeta.hasLore()) {
+                        List<String> lore = chestPlateMeta.getLore();
+                        if(lore.size() > 0 &&
+                                (lore.get(0).equalsIgnoreCase("protects against the heat."))) {
+                            weatherArmourFlags |= 0b00000100;
+                        } else if(lore.get(0).equalsIgnoreCase("protects against the cold.")) {
+                            weatherArmourFlags |= 0b01000000;
+                        }
+                    }
+                }
+
+                if(player.getInventory().getHelmet()!= null &&
+                        player.getInventory().getHelmet().getType().equals(Material.LEATHER_HELMET)) {
+                    ItemMeta hatMeta = player.getInventory().getHelmet().getItemMeta();
+                    if(hatMeta.hasLore()) {
+                        List<String> lore = hatMeta.getLore();
+                        if(lore.size() > 0 &&
+                                (lore.get(0).equalsIgnoreCase("protects against the heat."))) {
+                            weatherArmourFlags |= 0b00001000;
+                        } else if(lore.get(0).equalsIgnoreCase("protects against the cold.")) {
+                            weatherArmourFlags |= 0b10000000;
+                        }
+                    }
+                }
+
+                if(weatherArmourFlags == 240) {
+                    if(temperature <= 0.8) {
+                        ticksUntilStarve = 0;
+                    }
+                } else if(weatherArmourFlags == 15) {
+                    if(temperature >= 0.8) {
+                        ticksUntilStarve = 0;
+                    }
+                }
+
+                if(player.getGameMode().equals(GameMode.CREATIVE) || player.getGameMode().equals(GameMode.CREATIVE)) {
+                    ticksUntilStarve = 0;
                 }
 
                 int ticksPerHungerIncrease = (int) ticksUntilStarve / 20;
@@ -69,15 +141,20 @@ public class TemperatureChecker extends BukkitRunnable {
 
         @Override
         public void run() {
+            List<UUID> toRemove = new ArrayList<>();
             synchronized (playerHungerRates) {
                 for(UUID playerID: playerHungerRates.keySet()) {
                     Player player = Bukkit.getPlayer(playerID);
                     if(player == null || !player.isOnline()) {
+                        toRemove.add(playerID);
                         continue;
                     }
                     if(hungerAmounts.containsKey(playerID)) {
                         int currentTicksOfHunger = hungerAmounts.get(playerID);
                         int ticksPerHungerIncrease = playerHungerRates.get(playerID);
+                        if(ticksPerHungerIncrease == 0) {
+                            continue;
+                        }
                         if(currentTicksOfHunger >= ticksPerHungerIncrease) {
                             currentTicksOfHunger = 0;
                             player.setFoodLevel(player.getFoodLevel() - 1);
@@ -88,6 +165,9 @@ public class TemperatureChecker extends BukkitRunnable {
                     } else {
                         hungerAmounts.put(playerID, 0);
                     }
+                }
+                for(UUID playerID: toRemove) {
+                    playerHungerRates.remove(playerID);
                 }
             }
         }
