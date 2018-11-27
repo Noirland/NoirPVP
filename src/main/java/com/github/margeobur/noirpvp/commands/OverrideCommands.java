@@ -2,7 +2,10 @@ package com.github.margeobur.noirpvp.commands;
 
 import com.github.margeobur.noirpvp.FSDatabase;
 import com.github.margeobur.noirpvp.NoirPVPConfig;
+import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.PVPPlayer;
+import com.github.margeobur.noirpvp.tools.TimeTracker;
+import com.github.margeobur.noirpvp.tools.TimerCallback;
 import com.github.margeobur.noirpvp.trials.JailCell;
 import com.github.margeobur.noirpvp.trials.TrialManager;
 import org.bukkit.Bukkit;
@@ -13,9 +16,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.time.LocalDateTime;
+
 public class OverrideCommands implements CommandExecutor {
 
     private static final String CONTROL_COMMAND = "noirpvp";
+    private TimeTracker timer;
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] args) {
@@ -27,7 +33,6 @@ public class OverrideCommands implements CommandExecutor {
             return true;
         }
 
-        commandSender.sendMessage("doing this fo player");
         if(commandSender instanceof  Player &&
                 args.length == 1 && args[0].equalsIgnoreCase("itemdata")) {
             commandSender.sendMessage("other commands OK");
@@ -63,6 +68,23 @@ public class OverrideCommands implements CommandExecutor {
             JailCell.saveJailShortlist();
             NoirPVPConfig.getInstance().saveCells();
             PVPPlayer.saveAllPVPData();
+        } else if(args[0].equalsIgnoreCase("timer") && args.length > 1) {
+            if(args[1].equalsIgnoreCase("start")) {
+                int seconds;
+                if(args.length < 3) {
+                    seconds = 10;
+                } else {
+                    seconds = Integer.valueOf(args[2]);
+                }
+                timer = new TimeTracker(NoirPVPPlugin.getInstance());
+                timer.registerTimer(new TimerCallback() {
+                    @Override
+                    public void onTimerEnd() {
+                        System.out.println(LocalDateTime.now() + ": " + "ended timer after exactly " +
+                                seconds + " seconds");
+                    }
+                }, seconds);
+            }
         } else {
             return false;
         }

@@ -32,10 +32,8 @@ public class PlayerDeathListener implements Listener {
         }
 
         LocalDateTime currentTime = LocalDateTime.now();
-        if(playerInfo.getLastPVP() == null) {
-            return;
-        }
         if (playerInfo.getLastPVP() == null) {
+            System.out.println("doing regular death");
             playerInfo.doRegularDeath();
             return;
         }
@@ -43,6 +41,7 @@ public class PlayerDeathListener implements Listener {
         if(currentTime.isBefore(pvpDeactivationTime)) {
             doPVPDeath(event, playerInfo);
         } else {
+            System.out.println("doing regular death");
             playerInfo.doRegularDeath();
         }
 

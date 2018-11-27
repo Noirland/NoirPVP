@@ -204,11 +204,13 @@ public class PVPPlayer implements ConfigurationSerializable {
     public boolean canBack() {
         updateState();
         if(deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
+            System.out.println("User " + getPlayer().getName() + " cannot /back 1");
             return false;
         } else {
             LocalDateTime backUseEnd;
             if(lastRegularDeath == null) {
                 if(lastDeath == null) {
+                    System.out.println("User " + getPlayer().getName() + " cannot /back 2");
                     return false;
                 } else {
                     backUseEnd = lastDeath.plusSeconds(30);
@@ -220,8 +222,10 @@ public class PVPPlayer implements ConfigurationSerializable {
             }
 
             if(backUseEnd.isBefore(LocalDateTime.now())) {
+                System.out.println("User " + getPlayer().getName() + " cannot /back 3");
                 return false;
             } else {
+                System.out.println("User " + getPlayer().getName() + " can /back");
                 return true;
             }
         }
