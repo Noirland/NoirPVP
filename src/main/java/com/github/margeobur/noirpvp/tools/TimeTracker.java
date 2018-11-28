@@ -1,15 +1,12 @@
 package com.github.margeobur.noirpvp.tools;
 
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
-import javafx.util.Callback;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * This class represents an abstracted timer (stopwatch) that uses a database to persistently keep time.
@@ -18,16 +15,19 @@ import java.util.UUID;
 public class TimeTracker {
 
     private Plugin thePlugin;
-    private long milisecondsPreviousSessions = 0;
     private long milisecondsAlreadyRun = 0; // the value of milisecondsPreviousSessions is included in here
 
+    private boolean paused;
+    private LocalDateTime firstStart;
     private LocalDateTime lastUpdate;
-    private LocalDateTime lastPause;
-    private LocalDateTime lastResume;
+    private List<BukkitRunnable> activeTasks = new ArrayList<>();
+    private List<CallbackAtTime> waitingCallbacks = new ArrayList<>();
 
     public TimeTracker(Plugin plugin) {
         thePlugin = plugin;
         lastUpdate = LocalDateTime.now();
+        firstStart = lastUpdate;
+        paused = false;
     }
 
     /**
@@ -37,9 +37,19 @@ public class TimeTracker {
      *                          from the time the timer was first started
      */
     public void registerTimer(TimerCallback callback, int secondsAfterStart) {
-        updateMilisecondsRun();
-        long milisecsToGo = 1000 * secondsAfterStart - milisecondsAlreadyRun;
-        scheduleCallback(callback, milisecsToGo);
+        BukkitRunnable runnable;
+        if(!paused) {
+            updateMilisecondsRun();
+            long milisecsToGo = 1000 * secondsAfterStart - milisecondsAlreadyRun;
+            runnable = scheduleCallback(callback, milisecsToGo);
+        }
+        runnable = new BukkitRunnable() {
+            @Override
+            public void run() {
+            }
+        };
+        activeTasks.add(runnable);
+        waitingCallbacks.add(activeTasks.indexOf(runnable), new CallbackAtTime(secondsAfterStart, callback));
     }
 
     /**
@@ -49,7 +59,19 @@ public class TimeTracker {
      *                       from the time this method is invoked
      */
     public void registerTimerFromNow(TimerCallback callback, int secondsFromNow) {
-        scheduleCallback(callback, secondsFromNow * 1000);
+        BukkitRunnable runnable;
+        if(!paused) {
+            updateMilisecondsRun();
+            runnable = scheduleCallback(callback, secondsFromNow * 1000);
+        }
+        runnable = new BukkitRunnable() {
+            @Override
+            public void run() {
+            }
+        };
+        int secondsAfterStart = (int) (milisecondsAlreadyRun/1000 + secondsFromNow);
+        activeTasks.add(runnable);
+        waitingCallbacks.add(activeTasks.indexOf(runnable), new CallbackAtTime(secondsAfterStart, callback));
     }
 
     /**
@@ -57,7 +79,36 @@ public class TimeTracker {
      */
     public void pause() {
         updateMilisecondsRun();
+        paused = true;
+        for(BukkitRunnable timerTask: activeTasks) {
+            timerTask.cancel();
+            int seconds = waitingCallbacks.get(activeTasks.indexOf(timerTask)).getSecondsAfterStart();
+            System.out.println("Pausing " + seconds + " second task with " +
+                    (1000 * seconds - milisecondsAlreadyRun)/1000 + " seconds left");
+        }
+    }
 
+    /**
+     * Resumes the timer. All bukkitrunnables are started again
+     */
+    public void resume() {
+        paused = false;
+        int i = 0;
+        for(CallbackAtTime callbackPair: waitingCallbacks) {
+            BukkitRunnable newRunnable = scheduleCallback(callbackPair.getCallback(),
+                    1000 * callbackPair.getSecondsAfterStart() - milisecondsAlreadyRun);
+            activeTasks.set(i++, newRunnable);
+        }
+    }
+
+    /**
+     * @return the number of seconds for which this timer has run
+     */
+    public int getSecondsElapsed() {
+        if(!paused) {
+            updateMilisecondsRun();
+        }
+        return (int) milisecondsAlreadyRun / 1000;
     }
 
     /**
@@ -66,7 +117,7 @@ public class TimeTracker {
      *
      * It runs a wait task asynchronously and then calls a synchronous task that invokes the callback.
      */
-    private void scheduleCallback(TimerCallback callback, long miliseconds) {
+    private BukkitRunnable scheduleCallback(TimerCallback callback, long miliseconds) {
         BukkitRunnable runCallback = new BukkitRunnable() {
             @Override
             public void run() {
@@ -79,12 +130,20 @@ public class TimeTracker {
             public void run() {
                 try {
                     Thread.sleep(miliseconds);
-                } catch (InterruptedException e) { }
+                } catch (InterruptedException e) {
+                    return;
+                }
+                if(paused) {
+                    return;
+                }
                 runCallback.runTask(NoirPVPPlugin.getInstance());
+                waitingCallbacks.remove(activeTasks.indexOf(this));
+                activeTasks.remove(this);
             }
         };
 
         waitForTime.runTaskAsynchronously(thePlugin);
+        return waitForTime;
     }
 
     /**
@@ -92,10 +151,52 @@ public class TimeTracker {
      * milisecondsAlreadyRun to the instant the method is called.
      */
     public void updateMilisecondsRun() {
+        if(paused) {
+            return;
+        }
         LocalDateTime now = LocalDateTime.now();
+        System.out.print("Updating at " + now + " by ");
         Duration timeOnline = Duration.between(now, lastUpdate);
-        long secondsServedNow = Math.abs(timeOnline.getSeconds());
-        milisecondsAlreadyRun += secondsServedNow;
+        long milisecsServedNow = Math.abs(timeOnline.toMillis());
+        System.out.print(milisecsServedNow + " miliseconds to ");
+        milisecondsAlreadyRun += milisecsServedNow;
+        System.out.print(milisecondsAlreadyRun + " miliseconds.\n");
         lastUpdate = now;
+    }
+
+    private class CallbackAtTime {
+        private int secondsAfterStart;
+        private TimerCallback callback;
+
+        public CallbackAtTime(int secondsAfterStart, TimerCallback callback) {
+            this.secondsAfterStart = secondsAfterStart;
+            this.callback = callback;
+        }
+
+        public int getSecondsAfterStart() {
+            return secondsAfterStart;
+        }
+
+        public TimerCallback getCallback() {
+            return callback;
+        }
+    }
+
+    public TimeTracker(Map<String, Object> serialMap) {
+        if(serialMap.containsKey("milisecsAlreadyRun"))
+            milisecondsAlreadyRun = (int) serialMap.get("milisecsAlreadyRun");
+
+        if(serialMap.containsKey("firstStart")) {
+            firstStart = LocalDateTime.parse((String) serialMap.get("firstStart"));
+        }
+    }
+
+    public void serialize(Map<String, Object> serialMap) {
+        if(!paused) {
+            updateMilisecondsRun();
+        }
+
+        serialMap.put("milisecsAlreadyRun", milisecondsAlreadyRun);
+        serialMap.put("firstStart", firstStart.toString());
     }
 }

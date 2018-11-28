@@ -76,14 +76,24 @@ public class OverrideCommands implements CommandExecutor {
                 } else {
                     seconds = Integer.valueOf(args[2]);
                 }
-                timer = new TimeTracker(NoirPVPPlugin.getInstance());
-                timer.registerTimer(new TimerCallback() {
-                    @Override
-                    public void onTimerEnd() {
-                        System.out.println(LocalDateTime.now() + ": " + "ended timer after exactly " +
-                                seconds + " seconds");
-                    }
-                }, seconds);
+                if(timer == null) {
+                    timer = new TimeTracker(NoirPVPPlugin.getInstance());
+                    System.out.println(LocalDateTime.now() + ": " + "starting new timer");
+                    timer.registerTimer(() ->
+                            System.out.println(LocalDateTime.now() + ": " + "ended timer after exactly " +
+                                    seconds + " seconds"), seconds);
+                } else {
+                    System.out.println(LocalDateTime.now() + ": " + "starting timer");
+                    timer.registerTimerFromNow(() ->
+                            System.out.println(LocalDateTime.now() + ": " + "ended timer after exactly " +
+                                    seconds + " seconds"), seconds);
+                }
+            } else if(args[1].equalsIgnoreCase("pause")) {
+                System.out.println(LocalDateTime.now() + ": " + "pausing timer");
+                timer.pause();
+            } else if(args[1].equalsIgnoreCase("resume")) {
+                System.out.println(LocalDateTime.now() + ": " + "resuming timer");
+                timer.resume();
             }
         } else {
             return false;
