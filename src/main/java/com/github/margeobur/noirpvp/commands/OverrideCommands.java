@@ -81,12 +81,12 @@ public class OverrideCommands implements CommandExecutor {
                     System.out.println(LocalDateTime.now() + ": " + "starting new timer");
                     timer.registerTimer(() ->
                             System.out.println(LocalDateTime.now() + ": " + "ended timer after exactly " +
-                                    seconds + " seconds"), seconds);
+                                    seconds + " seconds"), seconds, "timer");
                 } else {
                     System.out.println(LocalDateTime.now() + ": " + "starting timer");
                     timer.registerTimerFromNow(() ->
                             System.out.println(LocalDateTime.now() + ": " + "ended timer after exactly " +
-                                    seconds + " seconds"), seconds);
+                                    seconds + " seconds"), seconds, "anothertimer");
                 }
             } else if(args[1].equalsIgnoreCase("pause")) {
                 System.out.println(LocalDateTime.now() + ": " + "pausing timer");

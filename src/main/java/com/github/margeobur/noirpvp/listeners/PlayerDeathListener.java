@@ -1,11 +1,7 @@
 package com.github.margeobur.noirpvp.listeners;
 
-import com.github.margeobur.noirpvp.NoirPVPConfig;
-import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.PVPPlayer;
-import com.github.margeobur.noirpvp.tools.DelayedMessager;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -33,7 +29,6 @@ public class PlayerDeathListener implements Listener {
 
         LocalDateTime currentTime = LocalDateTime.now();
         if (playerInfo.getLastPVP() == null) {
-            System.out.println("doing regular death");
             playerInfo.doRegularDeath();
             return;
         }
@@ -41,7 +36,6 @@ public class PlayerDeathListener implements Listener {
         if(currentTime.isBefore(pvpDeactivationTime)) {
             doPVPDeath(event, playerInfo);
         } else {
-            System.out.println("doing regular death");
             playerInfo.doRegularDeath();
         }
 
@@ -61,7 +55,7 @@ public class PlayerDeathListener implements Listener {
         event.setKeepInventory(true);
         event.setKeepLevel(true);
         // This will send a message to the player and update their state:
-        playerInfo.doDeath();
+        playerInfo.doPvPDeath();
 
         Player attacker = Bukkit.getPlayer(playerInfo.getLastAttackerID());
         PVPPlayer attackerPVP = PVPPlayer.getPlayerByUUID(attacker.getUniqueId());

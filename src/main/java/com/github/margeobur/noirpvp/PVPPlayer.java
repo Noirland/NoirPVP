@@ -1,6 +1,7 @@
 package com.github.margeobur.noirpvp;
 
 import com.github.margeobur.noirpvp.tools.DelayedMessager;
+import com.github.margeobur.noirpvp.tools.TimeTracker;
 import com.github.margeobur.noirpvp.trials.TrialManager;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -28,17 +29,20 @@ public class PVPPlayer implements ConfigurationSerializable {
 
     private UUID playerID;
     private UUID attackerID;
+
     private boolean lastDamagePVP = false;
     private LocalDateTime lastPVP;
-    private LocalDateTime lastDeath;
-    private LocalDateTime lastRegularDeath;
-    private enum DeathState { CLEAR, PROTECTED, COOLDOWN, PROTECTED_COOLDOWN } // used in determining whether the user can /back atm
+
+    private TimeTracker pvpDeathTimer;
+    private LocalDateTime lastPVPDeath;
+    private enum DeathState { CLEAR, PROTECTED, COOLDOWN, PROTECTED_COOLDOWN;} // used in determining whether the user can /back atm
     private DeathState deathState = DeathState.CLEAR;
 
-    private BukkitRunnable lastMessageTask;
+    private boolean lastDeathRecent = false;
+    private TimeTracker regDeathTimer;
+
     private LocalDateTime logOffTime;
     private LocalDateTime logOnTime;
-    private long secondsLoggedOff;
 
     private boolean lastHitCancelled;
     private int crimeMarks = 0;
@@ -87,75 +91,95 @@ public class PVPPlayer implements ConfigurationSerializable {
         return attackerID;
     }
 
-    public void doDeath() {
-        lastDeath = LocalDateTime.now();
-        updateState();
+    public void doPvPDeath() {
+        lastPVPDeath = LocalDateTime.now();
+
         if(deathState.equals(DeathState.CLEAR)) {
             deathState = DeathState.PROTECTED;
+            if(pvpDeathTimer != null) {
+                pvpDeathTimer.reset();
+            }
+            pvpDeathTimer = new TimeTracker(NoirPVPPlugin.getInstance());
+            pvpDeathTimer.registerTimer(() -> {
+                doProtectionEnd();
+            }, NoirPVPConfig.PROTECTION_DURATION, "protection");
+            pvpDeathTimer.registerTimer(() -> {
+                doCooldownEnd();
+            }, NoirPVPConfig.PROTECTION_DURATION + NoirPVPConfig.COOLDOWN_DURATION, "cooldown");
+
         } else if(deathState.equals(DeathState.COOLDOWN)) {
             deathState = DeathState.PROTECTED_COOLDOWN;
+            if(pvpDeathTimer == null) {
+                pvpDeathTimer = new TimeTracker(NoirPVPPlugin.getInstance());
+            } else {
+                pvpDeathTimer.reset();
+            }
+            pvpDeathTimer.registerTimer(() -> {
+                doDoubleEnd();
+            }, NoirPVPConfig.DOUBLE_PROTECTION_DURATION, "protect_cooldown");
         }
-
-        Player player = Bukkit.getPlayer(playerID);
-        DelayedMessager messager = new DelayedMessager();
-        if(canBack()) {
-            lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_PROTECTION_END,
-                    NoirPVPConfig.PROTECTION_DURATION);
-        } else {
-            lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_DOUBLE_END,
-                    NoirPVPConfig.DOUBLE_PROTECTION_DURATION);
-        }
+        doRegularDeath();
     }
 
     public void doRegularDeath() {
-        lastRegularDeath = LocalDateTime.now();
+        lastDeathRecent = true;
+        regDeathTimer = new TimeTracker(NoirPVPPlugin.getInstance());
+        regDeathTimer.registerTimer(() -> { lastDeathRecent = false;
+                                            regDeathTimer.reset();
+                                            regDeathTimer = null;}, NoirPVPConfig.BACK_DURATION, "death");
     }
 
-    /*
-        This method acts a state transition funciton. It updates the state whenever we need to check it without
-        the user dying.
-     */
-    private void updateState() {
-        //getPlayer().sendMessage("old state: " + deathState);
-        if(lastDeath == null) {
-            return;     // we must be CLEAR
+    private void doProtectionEnd() {
+        Player player = Bukkit.getPlayer(playerID);
+        if(player == null || !player.isOnline()) {
+            return;
         }
-        LocalDateTime currentTime = LocalDateTime.now();
-        LocalDateTime protectionDeactivation = lastDeath.plusSeconds(NoirPVPConfig.PROTECTION_DURATION + secondsLoggedOff);
-        LocalDateTime coolDownDeactivation = lastDeath.plusSeconds(NoirPVPConfig.COOLDOWN_DURATION + secondsLoggedOff);
-        LocalDateTime doubleDeathDeactivation = lastDeath.plusSeconds(NoirPVPConfig.DOUBLE_PROTECTION_DURATION + secondsLoggedOff);
+        player.sendMessage(NoirPVPConfig.PLAYER_PROTECTION_END);
+        deathState = DeathState.COOLDOWN;
+    }
 
-        if(deathState.equals(DeathState.PROTECTED)) {
-            //getPlayer().sendMessage("next PVP end " + protectionDeactivation.toString() + " seconds: " + secondsLoggedOff);
-            if(currentTime.isAfter(protectionDeactivation) && currentTime.isBefore(coolDownDeactivation)) {
-                deathState = DeathState.COOLDOWN;
-            } else if(currentTime.isAfter(coolDownDeactivation)) {
-                deathState = DeathState.CLEAR;
-                secondsLoggedOff = 0;
-            } // otherwise still in PROTECTED state
-        } else if(deathState.equals(DeathState.COOLDOWN)) {
-            //getPlayer().sendMessage("next cooldown end " + coolDownDeactivation.toString() + " seconds: " + secondsLoggedOff);
-            if(currentTime.isAfter(coolDownDeactivation)) {
-                deathState = DeathState.CLEAR;
-                secondsLoggedOff = 0;
-            } // otherwise still in COOLDOWN state
-        } else if(deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
-            //getPlayer().sendMessage("next backblock end " + doubleDeathDeactivation.toString() + " seconds: " + secondsLoggedOff);
-            if(currentTime.isAfter(doubleDeathDeactivation)) {
-                deathState = DeathState.CLEAR;
-                secondsLoggedOff = 0;
-            }
-        } else { // if in CLEAR state then we will always remain CLEAR (we only leave it via death in doDeath())
-            secondsLoggedOff = 0;
+    private void doCooldownEnd() {
+        deathState = DeathState.CLEAR;
+    }
+
+    private void doDoubleEnd() {
+        Player player = Bukkit.getPlayer(playerID);
+        if(player == null || !player.isOnline()) {
+            return;
         }
-        //getPlayer().sendMessage("new state " + deathState);
+        player.sendMessage(NoirPVPConfig.PLAYER_DOUBLE_END);
+        deathState = DeathState.CLEAR;
+    }
+
+    /**
+     * Determines if a player can use the /back command.
+     */
+    public boolean canBack() {
+        if(deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
+            return false;
+        } else {
+            return lastDeathRecent;
+        }
+    }
+
+    /**
+     * Determines if the player can be hurt. If they can't be hurt, then they can't hurt others.
+     */
+    public boolean canBeHurt() {
+        if(deathState.equals(DeathState.PROTECTED) || deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public void pauseCooldowns() {
-        if(lastMessageTask != null) {
-            lastMessageTask.cancel();
+        if(regDeathTimer != null) {
+            regDeathTimer.pause();
         }
-        logOffTime = LocalDateTime.now();
+        if(pvpDeathTimer != null) {
+            pvpDeathTimer.pause();
+        }
 
         if(isJailed()) {
             Duration timeOnline = Duration.between(logOnTime, logOffTime);
@@ -166,81 +190,14 @@ public class PVPPlayer implements ConfigurationSerializable {
 
     public void resumeCooldowns() {
         //getPlayer().sendMessage("resuming state is " + deathState);
+        if(regDeathTimer != null) {
+            regDeathTimer.resume();
+        }
+        if(pvpDeathTimer != null) {
+            pvpDeathTimer.resume();
+        }
+
         logOnTime = LocalDateTime.now();
-        if(logOffTime == null || lastDeath == null) {
-            return;
-        }
-        Duration timeLoggedOff = Duration.between(logOnTime, logOffTime);
-        secondsLoggedOff += Math.abs(timeLoggedOff.getSeconds());
-
-//        System.out.println("logoff time: " + logOffTime);
-//        System.out.println("seconds logged off: " + secondsLoggedOff);
-
-        Duration timeBetweenDeathLogoff = Duration.between(lastDeath, logOffTime);
-        long secondsBetweenDeathLogoff = Math.abs(timeBetweenDeathLogoff.getSeconds());
-
-        Player player = Bukkit.getPlayer(playerID);
-        DelayedMessager messager = new DelayedMessager();
-        if(canBack()) {
-            if(secondsBetweenDeathLogoff < NoirPVPConfig.PROTECTION_DURATION) {
-                int remainingTime = Math.abs((int) secondsBetweenDeathLogoff - NoirPVPConfig.PROTECTION_DURATION);
-                lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_PROTECTION_END, remainingTime);
-            }
-        } else {
-            if(secondsBetweenDeathLogoff < NoirPVPConfig.DOUBLE_PROTECTION_DURATION) {
-                int remainingTime = Math.abs((int) secondsBetweenDeathLogoff - NoirPVPConfig.DOUBLE_PROTECTION_DURATION);
-                lastMessageTask = messager.scheduleMessage(player, NoirPVPConfig.PLAYER_DOUBLE_END, remainingTime);
-            }
-        }
-    }
-
-    public LocalDateTime lastLoggedOff() {
-        return logOffTime;
-    }
-
-    /**
-     * Determines if a player can use the /back command.
-     */
-    public boolean canBack() {
-        updateState();
-        if(deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
-            System.out.println("User " + getPlayer().getName() + " cannot /back 1");
-            return false;
-        } else {
-            LocalDateTime backUseEnd;
-            if(lastRegularDeath == null) {
-                if(lastDeath == null) {
-                    System.out.println("User " + getPlayer().getName() + " cannot /back 2");
-                    return false;
-                } else {
-                    backUseEnd = lastDeath.plusSeconds(30);
-                }
-            } else if(lastDeath == null || lastDeath.isBefore(lastRegularDeath)) {
-                backUseEnd = lastRegularDeath.plusSeconds(30);
-            } else {
-                backUseEnd = lastDeath.plusSeconds(30);
-            }
-
-            if(backUseEnd.isBefore(LocalDateTime.now())) {
-                System.out.println("User " + getPlayer().getName() + " cannot /back 3");
-                return false;
-            } else {
-                System.out.println("User " + getPlayer().getName() + " can /back");
-                return true;
-            }
-        }
-    }
-
-    /**
-     * Determines if the player can be hurt. If they can't be hurt, then they can't hurt others.
-     */
-    public boolean canBeHurt() {
-        updateState();
-        if(deathState.equals(DeathState.PROTECTED) || deathState.equals(DeathState.PROTECTED_COOLDOWN)) {
-            return false;
-        } else {
-            return true;
-        }
     }
 
     /**
@@ -306,7 +263,7 @@ public class PVPPlayer implements ConfigurationSerializable {
         if(serialMap.containsKey("playerID")) { playerID = UUID.fromString((String) serialMap.get("playerID")); }
         if(serialMap.containsKey("lastDamagePVP")) { lastDamagePVP = (Boolean) serialMap.get("lastDamagePVP"); }
         if(serialMap.containsKey("lastPVP")) { lastPVP = LocalDateTime.parse((String) serialMap.get("lastPVP")); }
-        if(serialMap.containsKey("lastDeath")) { lastDeath = LocalDateTime.parse((String) serialMap.get("lastPVP")); }
+        if(serialMap.containsKey("lastPVPDeath")) { lastPVPDeath = LocalDateTime.parse((String) serialMap.get("lastPVP")); }
         if(serialMap.containsKey("deathState")) { deathState = DeathState.valueOf((String) serialMap.get("deathState")); }
         if(serialMap.containsKey("logOffTime")) { logOffTime = LocalDateTime.parse((String) serialMap.get("logOffTime")); }
 
@@ -335,8 +292,6 @@ public class PVPPlayer implements ConfigurationSerializable {
         serialMap.put("lastDamagePVP", lastDamagePVP);
         if(lastPVP != null)
             serialMap.put("lastPVP", lastPVP.toString());
-        if(lastDeath != null)
-            serialMap.put("lastDeath", lastDeath.toString());
         if(deathState != null)
             serialMap.put("deathState", deathState.name());
         if(logOffTime != null)

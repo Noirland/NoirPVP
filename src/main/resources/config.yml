@@ -6,6 +6,8 @@
 
 # The following durations are all in seconds
 
+back-duration: 30
+
 # sets the time for which a player is protected the first time they get killed in PVP
 first-protection-duration: 30
 

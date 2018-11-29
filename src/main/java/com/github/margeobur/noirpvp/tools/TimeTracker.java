@@ -1,18 +1,22 @@
 package com.github.margeobur.noirpvp.tools;
 
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * This class represents an abstracted timer (stopwatch) that uses a database to persistently keep time.
  * TimeTrackers can be serialised as Strings for easy storage as elements of a wider database structure.
  */
-public class TimeTracker {
+@SerializableAs("Timer")
+public class TimeTracker implements ConfigurationSerializable {
 
     private Plugin thePlugin;
     private long milisecondsAlreadyRun = 0; // the value of milisecondsPreviousSessions is included in here
@@ -20,8 +24,7 @@ public class TimeTracker {
     private boolean paused;
     private LocalDateTime firstStart;
     private LocalDateTime lastUpdate;
-    private List<BukkitRunnable> activeTasks = new ArrayList<>();
-    private List<CallbackAtTime> waitingCallbacks = new ArrayList<>();
+    private Map<String, CallbackTask> waitingCallbacks = new HashMap<>();
 
     public TimeTracker(Plugin plugin) {
         thePlugin = plugin;
@@ -36,20 +39,14 @@ public class TimeTracker {
      * @param secondsAfterStart The number of seconds to wait before invoking the callback, measured
      *                          from the time the timer was first started
      */
-    public void registerTimer(TimerCallback callback, int secondsAfterStart) {
-        BukkitRunnable runnable;
+    public void registerTimer(TimerCallback callback, int secondsAfterStart, String title) {
+        CallbackTask task = new CallbackTask(title, callback, secondsAfterStart * 1000);
         if(!paused) {
             updateMilisecondsRun();
-            long milisecsToGo = 1000 * secondsAfterStart - milisecondsAlreadyRun;
-            runnable = scheduleCallback(callback, milisecsToGo);
+            task.startExecution();
         }
-        runnable = new BukkitRunnable() {
-            @Override
-            public void run() {
-            }
-        };
-        activeTasks.add(runnable);
-        waitingCallbacks.add(activeTasks.indexOf(runnable), new CallbackAtTime(secondsAfterStart, callback));
+
+        waitingCallbacks.put(task.key, task);
     }
 
     /**
@@ -58,20 +55,12 @@ public class TimeTracker {
      * @param secondsFromNow The number of seconds to wait before invoking the callback, measured
      *                       from the time this method is invoked
      */
-    public void registerTimerFromNow(TimerCallback callback, int secondsFromNow) {
-        BukkitRunnable runnable;
+    public void registerTimerFromNow(TimerCallback callback, int secondsFromNow, String title) {
         if(!paused) {
             updateMilisecondsRun();
-            runnable = scheduleCallback(callback, secondsFromNow * 1000);
         }
-        runnable = new BukkitRunnable() {
-            @Override
-            public void run() {
-            }
-        };
-        int secondsAfterStart = (int) (milisecondsAlreadyRun/1000 + secondsFromNow);
-        activeTasks.add(runnable);
-        waitingCallbacks.add(activeTasks.indexOf(runnable), new CallbackAtTime(secondsAfterStart, callback));
+        long milisAfterStart = milisecondsAlreadyRun + secondsFromNow * 1000;
+        registerTimer(callback, (int) milisAfterStart/1000, title);
     }
 
     /**
@@ -80,11 +69,8 @@ public class TimeTracker {
     public void pause() {
         updateMilisecondsRun();
         paused = true;
-        for(BukkitRunnable timerTask: activeTasks) {
-            timerTask.cancel();
-            int seconds = waitingCallbacks.get(activeTasks.indexOf(timerTask)).getSecondsAfterStart();
-            System.out.println("Pausing " + seconds + " second task with " +
-                    (1000 * seconds - milisecondsAlreadyRun)/1000 + " seconds left");
+        for(Map.Entry<String, CallbackTask> timerTask: waitingCallbacks.entrySet()) {
+            timerTask.getValue().setCancelled();
         }
     }
 
@@ -93,12 +79,28 @@ public class TimeTracker {
      */
     public void resume() {
         paused = false;
-        int i = 0;
-        for(CallbackAtTime callbackPair: waitingCallbacks) {
-            BukkitRunnable newRunnable = scheduleCallback(callbackPair.getCallback(),
-                    1000 * callbackPair.getSecondsAfterStart() - milisecondsAlreadyRun);
-            activeTasks.set(i++, newRunnable);
+        Map<String, CallbackTask> toRemove = new HashMap<>(waitingCallbacks);
+        for(Map.Entry<String, CallbackTask> timerTask: toRemove.entrySet()) {
+            waitingCallbacks.remove(timerTask.getKey());
+            CallbackTask newTask = new CallbackTask(timerTask.getKey(),
+                    timerTask.getValue().callback, timerTask.getValue().milisecsAfterStart);
+            waitingCallbacks.put(timerTask.getKey(), newTask);
+            newTask.startExecution();
         }
+    }
+
+    /**
+     * Reset the state of this timer, essentially building a new one
+     */
+    public void reset() {
+        for(Map.Entry<String, CallbackTask> timerTask: waitingCallbacks.entrySet()) {
+            timerTask.getValue().cancel();
+        }
+        waitingCallbacks.clear();
+        lastUpdate = LocalDateTime.now();
+        firstStart = lastUpdate;
+        paused = false;
+        milisecondsAlreadyRun = 0;
     }
 
     /**
@@ -112,75 +114,72 @@ public class TimeTracker {
     }
 
     /**
-     * This method is wrapped by {@link TimeTracker#registerTimer(TimerCallback, int)} and
-     * {@link TimeTracker#registerTimerFromNow(TimerCallback, int)}.
-     *
-     * It runs a wait task asynchronously and then calls a synchronous task that invokes the callback.
-     */
-    private BukkitRunnable scheduleCallback(TimerCallback callback, long miliseconds) {
-        BukkitRunnable runCallback = new BukkitRunnable() {
-            @Override
-            public void run() {
-                callback.onTimerEnd();
-            }
-        };
-
-        BukkitRunnable waitForTime = new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(miliseconds);
-                } catch (InterruptedException e) {
-                    return;
-                }
-                if(paused) {
-                    return;
-                }
-                runCallback.runTask(NoirPVPPlugin.getInstance());
-                waitingCallbacks.remove(activeTasks.indexOf(this));
-                activeTasks.remove(this);
-            }
-        };
-
-        waitForTime.runTaskAsynchronously(thePlugin);
-        return waitForTime;
-    }
-
-    /**
      * Called before any of the operations that use its value, this method updates the value of
      * milisecondsAlreadyRun to the instant the method is called.
      */
-    public void updateMilisecondsRun() {
+    private void updateMilisecondsRun() {
         if(paused) {
             return;
         }
         LocalDateTime now = LocalDateTime.now();
-        System.out.print("Updating at " + now + " by ");
         Duration timeOnline = Duration.between(now, lastUpdate);
         long milisecsServedNow = Math.abs(timeOnline.toMillis());
-        System.out.print(milisecsServedNow + " miliseconds to ");
         milisecondsAlreadyRun += milisecsServedNow;
-        System.out.print(milisecondsAlreadyRun + " miliseconds.\n");
         lastUpdate = now;
     }
 
-    private class CallbackAtTime {
-        private int secondsAfterStart;
-        private TimerCallback callback;
+    private class CallbackTask extends BukkitRunnable {
 
-        public CallbackAtTime(int secondsAfterStart, TimerCallback callback) {
-            this.secondsAfterStart = secondsAfterStart;
+        String key;
+        TimerCallback callback;
+        long milisecsAfterStart;
+        boolean cancelled = true;
+        private long milisecs;
+
+        CallbackTask(String key, TimerCallback callback, long miliseconds) {
+            int i = 0;
+            while(waitingCallbacks.containsKey(key)) {
+                key = key + i++;
+            }
+            this.key = key;
             this.callback = callback;
+            this.milisecsAfterStart = miliseconds;
         }
 
-        public int getSecondsAfterStart() {
-            return secondsAfterStart;
+        void startExecution() {
+            milisecs = milisecsAfterStart - milisecondsAlreadyRun;
+            cancelled = false;
+            runTaskAsynchronously(thePlugin);
         }
 
-        public TimerCallback getCallback() {
-            return callback;
+        void setCancelled() {
+            cancelled = true;
         }
-    }
+
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(milisecs);
+            } catch (InterruptedException e) {
+                return;
+            }
+            if(paused || cancelled) {
+                return;
+            }
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if(waitingCallbacks.containsKey(key)) {
+                        waitingCallbacks.remove(key);
+                    } else {
+                        System.out.println("The callback wasn't present while trying to remove it");
+                        System.out.println(key + ": " + CallbackTask.this);
+                    }
+                    callback.onTimerEnd();
+                }
+            }.runTask(thePlugin);
+        }
+    };
 
     public TimeTracker(Map<String, Object> serialMap) {
         if(serialMap.containsKey("milisecsAlreadyRun"))
@@ -189,14 +188,28 @@ public class TimeTracker {
         if(serialMap.containsKey("firstStart")) {
             firstStart = LocalDateTime.parse((String) serialMap.get("firstStart"));
         }
+        lastUpdate = LocalDateTime.now();
+        paused = true;
+        thePlugin = NoirPVPPlugin.getInstance();
     }
 
-    public void serialize(Map<String, Object> serialMap) {
+    public Map<String, Object> serialize() {
+        Map<String, Object> serialMap = new HashMap<>();
         if(!paused) {
             updateMilisecondsRun();
         }
 
         serialMap.put("milisecsAlreadyRun", milisecondsAlreadyRun);
         serialMap.put("firstStart", firstStart.toString());
+        return serialMap;
+    }
+
+    public void printoutTasks() {
+        System.out.println("Tasks:");
+        int i = 0;
+        for(Map.Entry<String, CallbackTask> task: waitingCallbacks.entrySet()) {
+            System.out.println("\t[" + i++ + ": " + task.getValue().key + "] " + task.toString());
+            System.out.println("\tto be called " + task.getValue().milisecsAfterStart/1000 + " s after start.");
+        }
     }
 }
