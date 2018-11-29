@@ -23,6 +23,7 @@ public class NoirPVPConfig {
     public static String PLAYER_PROTECTION_END = ChatColor.RED + "You are no longer protected from PVP";
     public static String PLAYER_DOUBLE_END = ChatColor.RED + "You are no longer protected from PVP";
 
+    public static int BACK_DURATION;
     public static int PROTECTION_DURATION;
     public static int COOLDOWN_DURATION;
     public static int DOUBLE_PROTECTION_DURATION;
@@ -56,6 +57,7 @@ public class NoirPVPConfig {
     private void copyConfigToMem() {
         FileConfiguration config = NoirPVPPlugin.getInstance().getConfig();
 
+        BACK_DURATION = config.getInt("back-duration");
         PROTECTION_DURATION = config.getInt("first-protection-duration");
         COOLDOWN_DURATION = config.getInt("cooldown-duration");
         DOUBLE_PROTECTION_DURATION = config.getInt("second-protection-duration");

@@ -263,7 +263,7 @@ public class TrialManager {
         for(UUID convictID: ids) {
             if(convictID.equals(playerID)) {
                 PVPPlayer convictPVP = PVPPlayer.getPlayerByUUID(playerID);
-                if(convictPVP.lastLoggedOff() == null || !convictPVP.isJailed()) {
+                if(!convictPVP.isJailed()) {
                     return;
                 }
 
