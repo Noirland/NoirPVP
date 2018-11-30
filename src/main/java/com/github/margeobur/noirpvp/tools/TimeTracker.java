@@ -8,6 +8,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -29,8 +31,7 @@ public class TimeTracker implements ConfigurationSerializable {
     public TimeTracker(Plugin plugin) {
         thePlugin = plugin;
         lastUpdate = LocalDateTime.now();
-        firstStart = lastUpdate;
-        paused = false;
+        paused = true;
     }
 
     /**
@@ -78,6 +79,10 @@ public class TimeTracker implements ConfigurationSerializable {
      * Resumes the timer. All bukkitrunnables are started again
      */
     public void resume() {
+        System.out.println("Resuming and I already have " + milisecondsAlreadyRun / 1000 + " seconds on the clock");
+        if(firstStart == null) {
+            firstStart = LocalDateTime.now();
+        }
         paused = false;
         Map<String, CallbackTask> toRemove = new HashMap<>(waitingCallbacks);
         for(Map.Entry<String, CallbackTask> timerTask: toRemove.entrySet()) {
@@ -93,13 +98,18 @@ public class TimeTracker implements ConfigurationSerializable {
      * Reset the state of this timer, essentially building a new one
      */
     public void reset() {
+        List<String> toRemove = new ArrayList<>();
         for(Map.Entry<String, CallbackTask> timerTask: waitingCallbacks.entrySet()) {
-            timerTask.getValue().cancel();
+            timerTask.getValue().setCancelled();
+            toRemove.add(timerTask.getKey());
+        }
+        for(String key: toRemove) {
+            waitingCallbacks.remove(key);
         }
         waitingCallbacks.clear();
         lastUpdate = LocalDateTime.now();
-        firstStart = lastUpdate;
-        paused = false;
+        firstStart = null;
+        paused = true;
         milisecondsAlreadyRun = 0;
     }
 
@@ -158,6 +168,9 @@ public class TimeTracker implements ConfigurationSerializable {
 
         @Override
         public void run() {
+            if(milisecs < 0) {
+                return;
+            }
             try {
                 Thread.sleep(milisecs);
             } catch (InterruptedException e) {
@@ -200,7 +213,9 @@ public class TimeTracker implements ConfigurationSerializable {
         }
 
         serialMap.put("milisecsAlreadyRun", milisecondsAlreadyRun);
-        serialMap.put("firstStart", firstStart.toString());
+        if(firstStart != null) {
+            serialMap.put("firstStart", firstStart.toString());
+        }
         return serialMap;
     }
 

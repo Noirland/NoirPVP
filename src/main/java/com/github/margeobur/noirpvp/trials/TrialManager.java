@@ -4,7 +4,8 @@ import com.github.margeobur.noirpvp.FSDatabase;
 import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.NoirPVPPlugin;
 import com.github.margeobur.noirpvp.PVPPlayer;
-import org.bukkit.Bukkit;
+import com.github.margeobur.noirpvp.tools.TimeTracker;
+import com.github.margeobur.noirpvp.tools.TimerCallback;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ public class TrialManager {
     private static TrialManager instance;
     public enum VoteResult { NO_TRIAL, ALREADY_VOTED, NOT_ALLOWED, WRONG_TYPE, SUCCESS }
 
-    private Deque<Trial> trials = new ArrayDeque<>();
+    private Deque<Trial> queuedTrials = new ArrayDeque<>();
     private List<Trial> cancelledSentences = new ArrayList<>();
     private List<Trial> offlineTrials = new ArrayList<>();
     private List<Trial> releaseTrials = new ArrayList<>();
@@ -38,12 +39,12 @@ public class TrialManager {
         List<JailTrial> queuedJailTrials = database.getJailTrials("queued-jail-trials");
         if(queuedRegularTrials != null) {
             for (Trial queuedTrial : queuedRegularTrials) {
-                trials.addLast(queuedTrial);
+                queuedTrials.addLast(queuedTrial);
             }
         }
         if(queuedJailTrials != null) {
             for(Trial queuedTrial: queuedJailTrials) {
-                trials.addLast(queuedTrial);
+                queuedTrials.addLast(queuedTrial);
             }
         }
 
@@ -56,7 +57,7 @@ public class TrialManager {
             offlineTrials.addAll(offlineJailTrials);
         }
 
-        if(!trials.isEmpty()) {
+        if(!queuedTrials.isEmpty()) {
             NoirPVPPlugin.getInstance().getLogger().log(Level.INFO, "Found trials");
             tryDoNextTrial();
         }
@@ -64,7 +65,7 @@ public class TrialManager {
 
     public void dispatchNewTrial(PVPPlayer attacker) {
         Trial newTrial = new Trial(attacker);
-        trials.addLast(newTrial);
+        queuedTrials.addLast(newTrial);
 
         // Try start the trial after a 5 second wait period
         new BukkitRunnable() {
@@ -77,7 +78,7 @@ public class TrialManager {
 
     public void dispatchNewJailTrial(PVPPlayer player, String reason) {
         JailTrial newTrial = new JailTrial(player, reason);
-        trials.addLast(newTrial);
+        queuedTrials.addLast(newTrial);
 
         new BukkitRunnable() {
             @Override
@@ -88,22 +89,22 @@ public class TrialManager {
     }
 
     private void tryDoNextTrial() {
-        if(trials.isEmpty()) {
+        if(queuedTrials.isEmpty()) {
             return;
         }
-        Trial mostRecentTrial = trials.getFirst();
+        Trial mostRecentTrial = queuedTrials.getFirst();
         if(mostRecentTrial.isInProgress()) {
             return;
         } else if(mostRecentTrial.isComplete()) {
-            trials.remove(mostRecentTrial);
-            mostRecentTrial = trials.getFirst();
+            queuedTrials.remove(mostRecentTrial);
+            mostRecentTrial = queuedTrials.getFirst();
         }
         // if the trial at the HEAD of the queue is neither in progress nor complete, then
         // it must be pending, so we can start it and schedule its completion.
 
         if(mostRecentTrial.getDefendant().getPlayer() == null || !mostRecentTrial.getDefendant().getPlayer().isOnline()) {
             offlineTrials.add(mostRecentTrial);
-            trials.remove(mostRecentTrial);
+            queuedTrials.remove(mostRecentTrial);
             tryDoNextTrial();
         } else {
             mostRecentTrial.start();
@@ -112,31 +113,29 @@ public class TrialManager {
     }
 
     private void scheduleTrialEnd() {
-        BukkitRunnable trialEndTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                Trial currentTrial = trials.peekFirst();
-                if(currentTrial.getDefendant().getPlayer() == null || !currentTrial.getDefendant().getPlayer().isOnline()) {
-                    offlineTrials.add(currentTrial);
-                    trials.remove(currentTrial);
-                    currentTrial.reset();
-                    return;
-                }
-                currentTrial.end();
-                trials.remove(currentTrial);
-                if((currentTrial instanceof JailTrial) &&
-                        ((JailTrial) currentTrial).getResult().equals(JailTrial.JailTrialResult.JAIL) ||
-                   !(currentTrial instanceof JailTrial) &&
-                        currentTrial.getIsGuiltyVerdict()) {
-                    scheduleJailRelease(currentTrial, 0);
-                    releaseTrials.add(currentTrial);
-                }
-                tryDoNextTrial();
+        TimerCallback trialEndTask = () -> {
+            Trial currentTrial = queuedTrials.peekFirst();
+            if(currentTrial.getDefendant().getPlayer() == null || !currentTrial.getDefendant().getPlayer().isOnline()) {
+                offlineTrials.add(currentTrial);
+                queuedTrials.remove(currentTrial);
+                currentTrial.reset();
+                return;
             }
+            currentTrial.end();
+            queuedTrials.remove(currentTrial);
+            if((currentTrial instanceof JailTrial) &&
+                    ((JailTrial) currentTrial).getResult().equals(JailTrial.JailTrialResult.JAIL) ||
+               !(currentTrial instanceof JailTrial) &&
+                    currentTrial.getIsGuiltyVerdict()) {
+                scheduleJailRelease(currentTrial, 0);
+                releaseTrials.add(currentTrial);
+            }
+            tryDoNextTrial();
         };
 
-        int durationInTicks = 20 * NoirPVPConfig.TRIAL_DURATION;
-        trialEndTask.runTaskLater(NoirPVPPlugin.getInstance(), durationInTicks);
+        TimeTracker timer = new TimeTracker(NoirPVPPlugin.getInstance());
+        timer.registerTimer(trialEndTask, NoirPVPConfig.TRIAL_DURATION, "trial");
+        timer.resume();
     }
 
     public void unjailPlayer(PVPPlayer playerPVP) {
@@ -150,9 +149,7 @@ public class TrialManager {
     }
 
     private void scheduleJailRelease(Trial finishedTrial, int alreadyServed) {
-        BukkitRunnable jailReleaseTask = new BukkitRunnable() {
-            @Override
-            public void run() {
+        TimerCallback trialEndTask = () -> {
                 if(finishedTrial.getDefendant().getPlayer() == null || !finishedTrial.getDefendant().getPlayer().isOnline()) {
                     //cooldowns and jail time will have been paused when the player went offline
                     return;
@@ -161,22 +158,23 @@ public class TrialManager {
                     finishedTrial.releasePlayer();
                     releaseTrials.remove(finishedTrial);
                 }
-            }
         };
-        
-        int delayInTicks = 20 * (finishedTrial.getJailTimeSeconds() - alreadyServed);
-        jailReleaseTask.runTaskLater(NoirPVPPlugin.getInstance(), delayInTicks);
+
+        TimeTracker timer = new TimeTracker(NoirPVPPlugin.getInstance());
+        timer.registerTimer(trialEndTask, (finishedTrial.getJailTimeSeconds() - alreadyServed), "trialEnd");
+        timer.resume();
+        finishedTrial.setReleaseTimer(timer);
     }
 
     public PVPPlayer currentDefendant() {
-        if(!trials.isEmpty() && trials.peekFirst().isInProgress()) {
-            return trials.peekFirst().getDefendant();
+        if(!queuedTrials.isEmpty() && queuedTrials.peekFirst().isInProgress()) {
+            return queuedTrials.peekFirst().getDefendant();
         }
         return null;
     }
 
     public VoteResult addVoteToJailTrial(UUID voterID, JailTrial.JailTrialResult vote) {
-        Trial cTrial = trials.peekFirst();
+        Trial cTrial = queuedTrials.peekFirst();
         if(cTrial == null) {
             return VoteResult.NO_TRIAL;
         }
@@ -202,7 +200,7 @@ public class TrialManager {
     }
 
     public VoteResult addVoteToCurrentTrial(UUID voterID, boolean voteIsGuilty) {
-        Trial currentTrial = trials.peekFirst();
+        Trial currentTrial = queuedTrials.peekFirst();
         if(currentTrial == null || !currentTrial.isInProgress()) {
             return VoteResult.NO_TRIAL;
         }
@@ -221,13 +219,13 @@ public class TrialManager {
 
     public void pauseAllTrials() {
         FSDatabase database = FSDatabase.getInstance();
-        if(trials.peekFirst() != null && trials.peekFirst().isInProgress()) {
-            trials.peekFirst().reset();
+        if(queuedTrials.peekFirst() != null && queuedTrials.peekFirst().isInProgress()) {
+            queuedTrials.peekFirst().reset();
         }
 
         List<Trial> queuedRegularTrials = new ArrayList<>();
         List<JailTrial> queuedJailTrials = new ArrayList<>();
-        for(Trial queuedTrial: trials) {
+        for(Trial queuedTrial: queuedTrials) {
             if(queuedTrial instanceof JailTrial) {
                 queuedJailTrials.add((JailTrial) queuedTrial);
             } else {
@@ -302,7 +300,7 @@ public class TrialManager {
                     }
                 } else {
                     offlineTrials.remove(unfinishedTrial);
-                    trials.addLast(unfinishedTrial);
+                    queuedTrials.addLast(unfinishedTrial);
                     tryDoNextTrial();
                 }
                 return;
