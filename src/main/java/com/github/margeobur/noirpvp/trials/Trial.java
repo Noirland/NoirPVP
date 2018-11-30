@@ -2,6 +2,7 @@ package com.github.margeobur.noirpvp.trials;
 
 import com.github.margeobur.noirpvp.NoirPVPConfig;
 import com.github.margeobur.noirpvp.PVPPlayer;
+import com.github.margeobur.noirpvp.tools.TimeTracker;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -19,7 +20,9 @@ public class Trial implements ConfigurationSerializable {
 
     private Set<UUID> victims = new HashSet<>();
     private LocalDateTime initiatedTime;
-    protected enum TrialState { PENDING, IN_PROGRESS, COMPLETED }
+    protected enum TrialState { PENDING, IN_PROGRESS, COMPLETED, RESOLVED }
+
+    private TimeTracker releaseTimer;
 
     private int guiltyVotes = 0;
     private int innocentVotes = 0;
@@ -62,6 +65,14 @@ public class Trial implements ConfigurationSerializable {
 
     public Set<UUID> getVictims() {
         return victims;
+    }
+
+    public TimeTracker getReleaseTimer() {
+        return releaseTimer;
+    }
+
+    public void setReleaseTimer(TimeTracker releaseTimer) {
+        this.releaseTimer = releaseTimer;
     }
 
     void start() {

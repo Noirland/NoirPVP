@@ -1,5 +1,6 @@
 package com.github.margeobur.noirpvp;
 
+import com.github.margeobur.noirpvp.tools.TimeTracker;
 import com.github.margeobur.noirpvp.trials.JailTrial;
 import com.github.margeobur.noirpvp.trials.Trial;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -37,6 +38,7 @@ public class FSDatabase {
         ConfigurationSerialization.registerClass(PVPPlayer.class, "PVPPlayer");
         ConfigurationSerialization.registerClass(Trial.class, "Trial");
         ConfigurationSerialization.registerClass(JailTrial.class, "JailTrial");
+        ConfigurationSerialization.registerClass(TimeTracker.class, "Timer");
         reloadDatabase();
 
         scheduler = new SaveScheduler();

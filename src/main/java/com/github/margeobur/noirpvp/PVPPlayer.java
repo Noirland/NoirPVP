@@ -34,7 +34,6 @@ public class PVPPlayer implements ConfigurationSerializable {
     private LocalDateTime lastPVP;
 
     private TimeTracker pvpDeathTimer;
-    private LocalDateTime lastPVPDeath;
     private enum DeathState { CLEAR, PROTECTED, COOLDOWN, PROTECTED_COOLDOWN;} // used in determining whether the user can /back atm
     private DeathState deathState = DeathState.CLEAR;
 
@@ -92,14 +91,11 @@ public class PVPPlayer implements ConfigurationSerializable {
     }
 
     public void doPvPDeath() {
-        lastPVPDeath = LocalDateTime.now();
-
         if(deathState.equals(DeathState.CLEAR)) {
             deathState = DeathState.PROTECTED;
-            if(pvpDeathTimer != null) {
-                pvpDeathTimer.reset();
+            if(pvpDeathTimer == null) {
+                pvpDeathTimer = new TimeTracker(NoirPVPPlugin.getInstance());
             }
-            pvpDeathTimer = new TimeTracker(NoirPVPPlugin.getInstance());
             pvpDeathTimer.registerTimer(() -> {
                 doProtectionEnd();
             }, NoirPVPConfig.PROTECTION_DURATION, "protection");
@@ -111,13 +107,12 @@ public class PVPPlayer implements ConfigurationSerializable {
             deathState = DeathState.PROTECTED_COOLDOWN;
             if(pvpDeathTimer == null) {
                 pvpDeathTimer = new TimeTracker(NoirPVPPlugin.getInstance());
-            } else {
-                pvpDeathTimer.reset();
             }
             pvpDeathTimer.registerTimer(() -> {
                 doDoubleEnd();
             }, NoirPVPConfig.DOUBLE_PROTECTION_DURATION, "protect_cooldown");
         }
+        pvpDeathTimer.resume();
         doRegularDeath();
     }
 
@@ -125,8 +120,8 @@ public class PVPPlayer implements ConfigurationSerializable {
         lastDeathRecent = true;
         regDeathTimer = new TimeTracker(NoirPVPPlugin.getInstance());
         regDeathTimer.registerTimer(() -> { lastDeathRecent = false;
-                                            regDeathTimer.reset();
-                                            regDeathTimer = null;}, NoirPVPConfig.BACK_DURATION, "death");
+                                            regDeathTimer.reset();}, NoirPVPConfig.BACK_DURATION, "death");
+        regDeathTimer.resume();
     }
 
     private void doProtectionEnd() {
@@ -140,6 +135,7 @@ public class PVPPlayer implements ConfigurationSerializable {
 
     private void doCooldownEnd() {
         deathState = DeathState.CLEAR;
+        pvpDeathTimer.reset();
     }
 
     private void doDoubleEnd() {
@@ -149,6 +145,7 @@ public class PVPPlayer implements ConfigurationSerializable {
         }
         player.sendMessage(NoirPVPConfig.PLAYER_DOUBLE_END);
         deathState = DeathState.CLEAR;
+        pvpDeathTimer.reset();
     }
 
     /**
@@ -181,6 +178,7 @@ public class PVPPlayer implements ConfigurationSerializable {
             pvpDeathTimer.pause();
         }
 
+        logOffTime = LocalDateTime.now();
         if(isJailed()) {
             Duration timeOnline = Duration.between(logOnTime, logOffTime);
             long secondsServedNow = Math.abs(timeOnline.getSeconds());
@@ -263,9 +261,34 @@ public class PVPPlayer implements ConfigurationSerializable {
         if(serialMap.containsKey("playerID")) { playerID = UUID.fromString((String) serialMap.get("playerID")); }
         if(serialMap.containsKey("lastDamagePVP")) { lastDamagePVP = (Boolean) serialMap.get("lastDamagePVP"); }
         if(serialMap.containsKey("lastPVP")) { lastPVP = LocalDateTime.parse((String) serialMap.get("lastPVP")); }
-        if(serialMap.containsKey("lastPVPDeath")) { lastPVPDeath = LocalDateTime.parse((String) serialMap.get("lastPVP")); }
         if(serialMap.containsKey("deathState")) { deathState = DeathState.valueOf((String) serialMap.get("deathState")); }
         if(serialMap.containsKey("logOffTime")) { logOffTime = LocalDateTime.parse((String) serialMap.get("logOffTime")); }
+
+        if(serialMap.containsKey("pvp-timer")) {
+            pvpDeathTimer = (TimeTracker) serialMap.get("pvp-timer");
+            if(deathState == DeathState.PROTECTED) {
+                pvpDeathTimer.registerTimer(() -> {
+                    doProtectionEnd();
+                }, NoirPVPConfig.PROTECTION_DURATION, "protection");
+                pvpDeathTimer.registerTimer(() -> {
+                    doCooldownEnd();
+                }, NoirPVPConfig.PROTECTION_DURATION + NoirPVPConfig.COOLDOWN_DURATION, "cooldown");
+            } else if(deathState == DeathState.COOLDOWN) {
+                pvpDeathTimer.registerTimer(() -> {
+                    doCooldownEnd();
+                }, NoirPVPConfig.PROTECTION_DURATION + NoirPVPConfig.COOLDOWN_DURATION, "cooldown");
+            } else if(deathState == DeathState.PROTECTED_COOLDOWN) {
+                pvpDeathTimer.registerTimer(() -> {
+                    doDoubleEnd();
+                }, NoirPVPConfig.DOUBLE_PROTECTION_DURATION, "protect_cooldown");
+            }
+        }
+        if(serialMap.containsKey("reg-timer")) {
+            regDeathTimer = (TimeTracker) serialMap.get("reg-timer");
+            if(regDeathTimer.getSecondsElapsed() < 30) {
+                doRegularDeath();
+            }
+        }
 
         if(serialMap.containsKey("crimeMarks")) { crimeMarks = (Integer) serialMap.get("crimeMarks"); }
         if(serialMap.containsKey("victims")) {
@@ -297,6 +320,13 @@ public class PVPPlayer implements ConfigurationSerializable {
         if(logOffTime != null)
             serialMap.put("logOffTime", logOffTime.toString());
 
+        if(pvpDeathTimer != null) {
+            serialMap.put("pvp-timer", pvpDeathTimer);
+        }
+        if(regDeathTimer != null) {
+            serialMap.put("reg-timer", regDeathTimer);
+        }
+
         serialMap.put("crimeMarks", crimeMarks);
         List<String> victimIDs = new ArrayList<>();
         if(!(victims == null || victims.isEmpty())) {
@@ -325,6 +355,7 @@ public class PVPPlayer implements ConfigurationSerializable {
             }
         }
         PVPPlayer player = FSDatabase.getInstance().getPlayerPVPbyUUID(id);
+        players.add(player);
         return player;
     }
 
