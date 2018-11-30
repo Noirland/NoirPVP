@@ -157,7 +157,9 @@ public class TemperatureChecker extends BukkitRunnable {
                         }
                         if(currentTicksOfHunger >= ticksPerHungerIncrease) {
                             currentTicksOfHunger = 0;
-                            player.setFoodLevel(player.getFoodLevel() - 1);
+                            if(player.getFoodLevel() > 0) {
+                                player.setFoodLevel(player.getFoodLevel() - 1);
+                            }
                         } else {
                             currentTicksOfHunger += HUNGER_TICKS;
                         }
