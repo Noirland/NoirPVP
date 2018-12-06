@@ -1,6 +1,7 @@
 package com.github.margeobur.noirpvp.trials;
 
 import com.github.margeobur.noirpvp.FSDatabase;
+import com.github.margeobur.noirpvp.NoirPVPConfig;
 import org.bukkit.Location;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -45,28 +46,17 @@ public class JailCell implements ConfigurationSerializable {
         }
     }
 
-    public static void saveJailShortlist() {
-        FSDatabase.getInstance().saveJailShortlist(jailPlayerShortlist);
-    }
-
-    public static void refreshJailShortlist() {
-        jailPlayerShortlist = FSDatabase.getInstance().getJailShortlist();
-//        Set<UUID> convictIDs = jailPlayerShortlist.keySet();
-//        for(UUID convict: convictIDs) {
-//            int index = jailPlayerShortlist.get(convict);
-//            if(index >= jailCells.size()) {
-//                index = 0;
-//            }
-//            JailCell cell = jailCells.get(index);
-//            if(cell.canHouseMany) {
-//                cell.occupants.add(convict);
-//            } else {
-//                cell.singleOccupant = convict;
-//            }
-//        }
-    }
-
     public static Map<UUID, Integer> getJailShortlist() {
+        Map<UUID, Integer> jailPlayerShortlist = new HashMap<>();
+        for(JailCell cell: jailCells) {
+            if(cell.canHouseMany && cell.singleOccupant != null) {
+                jailPlayerShortlist.put(cell.singleOccupant, jailCells.indexOf(cell));
+            } else {
+                for(UUID occupantID: cell.occupants) {
+                    jailPlayerShortlist.put(occupantID, jailCells.indexOf(cell));
+                }
+            }
+        }
         return jailPlayerShortlist;
     }
 
@@ -102,21 +92,15 @@ public class JailCell implements ConfigurationSerializable {
         return serialMap;
     }
 
-    /* static JailCell management */
-    public static void setCells(List<JailCell> cells) {
-        jailCells = cells;
-    }
-
-    public static List<JailCell> getCells() {
-        return jailCells;
-    }
-
     public static void addNewCell(Location cellWarpLocation) {
+        JailCell newCell;
         if(jailCells.isEmpty()) {
-            jailCells.add(new JailCell(cellWarpLocation, true));
+            newCell = new JailCell(cellWarpLocation, true);
         } else {
-            jailCells.add(new JailCell(cellWarpLocation, false));
+            newCell = new JailCell(cellWarpLocation, false);
         }
+        jailCells.add(newCell);
+        NoirPVPConfig.getInstance().addJailCell(newCell);
     }
 
     /**
@@ -132,19 +116,16 @@ public class JailCell implements ConfigurationSerializable {
         for(JailCell cell: jailCells) {
              if(!cell.canHouseMany && cell.singleOccupant == null) {
                 cell.singleOccupant = playerID;
-                jailPlayerShortlist.put(playerID, jailCells.indexOf(cell));
                 return cell.warp;
             }
         }
         for(JailCell cell: jailCells) {
             if(cell.canHouseMany && cell.occupants.isEmpty()) {
                 cell.occupants.add(playerID);
-                jailPlayerShortlist.put(playerID, jailCells.indexOf(cell));
                 return cell.warp;
             }
         }
         jailCells.get(0).occupants.add(playerID);
-        jailPlayerShortlist.put(playerID, 0);
         return jailCells.get(0).warp;
     }
 
@@ -152,7 +133,6 @@ public class JailCell implements ConfigurationSerializable {
      * Searches for the cell that the player is in and deletes them from the cell
      */
     public static void releasePlayer(UUID playerId) {
-        jailPlayerShortlist.remove(playerId);
         for(JailCell cell: jailCells) {
             if(cell.canHouseMany && cell.occupants.contains(playerId)) {
                 cell.occupants.remove(playerId);
@@ -162,5 +142,9 @@ public class JailCell implements ConfigurationSerializable {
                 return;
             }
         }
+    }
+
+    public static void saveCells() {
+        NoirPVPConfig.getInstance().saveCells(jailCells);
     }
 }

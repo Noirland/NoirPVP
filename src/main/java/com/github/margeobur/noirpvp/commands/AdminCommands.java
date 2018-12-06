@@ -87,7 +87,7 @@ public class AdminCommands implements CommandExecutor {
 
                     Player admin = (Player) sender;
                     Location loc = admin.getLocation();
-                    NoirPVPConfig.getInstance().addJailCell(loc);
+
                     return true;
                 } else if(args.length > 1) {
                     if((sender instanceof Player) &&

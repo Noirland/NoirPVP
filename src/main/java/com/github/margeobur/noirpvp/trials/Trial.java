@@ -152,6 +152,8 @@ public class Trial implements ConfigurationSerializable {
             innocentVotes = (int) serialMap.get("innocentVotes");
         if(serialMap.containsKey("isGuilty"))
             isGuilty = (boolean) serialMap.get("isGuilty");
+        if(serialMap.containsKey("release-timer"))
+            releaseTimer = (TimeTracker) serialMap.get("release-timer");
 
         if(serialMap.containsKey("voteMap")) {
             List<String> voteStrs = (List<String>) serialMap.get("voteMap");
@@ -184,6 +186,9 @@ public class Trial implements ConfigurationSerializable {
         serialMap.put("innocentVotes", innocentVotes);
         if(isComplete())
             serialMap.put("isGuilty", isGuilty);
+
+        if(releaseTimer != null)
+            serialMap.put("release-timer", releaseTimer);
 
         List<String> voteStrs = new ArrayList<>();
         for(Map.Entry<UUID, Boolean> vote: voteMap.entrySet()) {

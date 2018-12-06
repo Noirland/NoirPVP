@@ -220,6 +220,7 @@ public class TrialManager {
     public void pauseAllTrials() {
         FSDatabase database = FSDatabase.getInstance();
         if(queuedTrials.peekFirst() != null && queuedTrials.peekFirst().isInProgress()) {
+            queuedTrials.peekFirst().getReleaseTimer().reset();
             queuedTrials.peekFirst().reset();
         }
 

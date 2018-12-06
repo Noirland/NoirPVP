@@ -87,18 +87,10 @@ public class NoirPVPConfig {
         }
     }
 
-    public void addJailCell(Location cellLocation) {
-        FileConfiguration config = NoirPVPPlugin.getInstance().getConfig();
-        JailCell.addNewCell(cellLocation);
-
-        config.set("jail-locations", JailCell.getCells());
-        NoirPVPPlugin.getInstance().saveConfig();
-    }
-
-    public void saveCells() {
+    public void saveCells(List<JailCell> cells) {
         FileConfiguration config = NoirPVPPlugin.getInstance().getConfig();
 
-        config.set("jail-locations", JailCell.getCells());
+        config.set("jail-locations", cells);
         NoirPVPPlugin.getInstance().saveConfig();
     }
 

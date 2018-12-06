@@ -74,32 +74,6 @@ public class FSDatabase {
         return players;
     }
 
-    public Map<UUID, Integer> getJailShortlist() {
-        if(database.contains("jail-shortlist")) {
-            Map<UUID, Integer> convictIDs = new HashMap<>();
-            Map<String, Object> convictIDStrs =
-                    (Map<String, Object>) database.getConfigurationSection("jail-shortlist").getValues(false);
-            Set<String> idStrs = convictIDStrs.keySet();
-            for(String idStr: idStrs) {
-//                System.out.println("convict found: " + idStr);
-                convictIDs.put(UUID.fromString(idStr), (Integer) convictIDStrs.get(idStr));
-            }
-            return convictIDs;
-        } else {
-            return new HashMap<>();
-        }
-    }
-
-    public void saveJailShortlist(Map<UUID, Integer> convictIDs) {
-        Map<String, Integer> convictIDStrs = new HashMap<>();
-        Set<UUID> playerIDs = convictIDs.keySet();
-        for(UUID convictID: playerIDs) {
-            convictIDStrs.put(convictID.toString(), convictIDs.get(convictID));
-        }
-        database.createSection("jail-shortlist", convictIDStrs);
-        saveDatabase();
-    }
-
     public void saveJailTrials(List<JailTrial> trials, String path) {
         database.set(path, trials);
         saveDatabase();
