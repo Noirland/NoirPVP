@@ -100,7 +100,7 @@ public class JailCell implements ConfigurationSerializable {
             newCell = new JailCell(cellWarpLocation, false);
         }
         jailCells.add(newCell);
-        NoirPVPConfig.getInstance().addJailCell(newCell);
+        NoirPVPConfig.getInstance().saveCells(jailCells);
     }
 
     /**
@@ -146,5 +146,9 @@ public class JailCell implements ConfigurationSerializable {
 
     public static void saveCells() {
         NoirPVPConfig.getInstance().saveCells(jailCells);
+    }
+
+    public static void setCells(List<JailCell> cells) {
+        jailCells = cells;
     }
 }

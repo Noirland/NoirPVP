@@ -256,7 +256,6 @@ public class TrialManager {
     }
 
     public void rescheduleJailReleasePotentially(UUID playerID) {
-        JailCell.refreshJailShortlist();
         Map<UUID, Integer> convictIDs = JailCell.getJailShortlist();
         Set<UUID> ids = convictIDs.keySet();
         for(UUID convictID: ids) {
@@ -268,7 +267,7 @@ public class TrialManager {
 
                 for(Trial trial: releaseTrials) {
                     if(trial.getDefendant().equals(convictPVP)) {
-                        scheduleJailRelease(trial, (int) convictPVP.getTimeAlreadyServed());
+                        scheduleJailRelease(trial, trial.getReleaseTime().);
                         return;
                     }
                 }

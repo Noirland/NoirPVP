@@ -65,7 +65,6 @@ public class NoirPVPPlugin extends JavaPlugin {
         if(TrialManager.getInstance() == null) {
             getLogger().log(Level.SEVERE, "Could not resume trials");
         }
-        JailCell.refreshJailShortlist();
 
         Recipes.addRecipes();
 
@@ -75,8 +74,7 @@ public class NoirPVPPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        JailCell.saveJailShortlist();
-        NoirPVPConfig.getInstance().saveCells();
+        JailCell.saveCells();
         TrialManager.getInstance().pauseAllTrials();
         PVPPlayer.pauseAllCooldowns();
         PVPPlayer.saveAllPVPData();

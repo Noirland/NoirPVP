@@ -49,7 +49,6 @@ public class PVPPlayer implements ConfigurationSerializable {
     private enum LegalState { CLEAN, INNOCENT, GUILTY }
     private LegalState legalState = LegalState.CLEAN;
     private LocalDateTime lastConviction;
-    private long secondsAlreadyServed = 0;
     private boolean nonMurderConvict = false;
 
     public PVPPlayer(UUID playerID) {
@@ -177,13 +176,6 @@ public class PVPPlayer implements ConfigurationSerializable {
         if(pvpDeathTimer != null) {
             pvpDeathTimer.pause();
         }
-
-        logOffTime = LocalDateTime.now();
-        if(isJailed()) {
-            Duration timeOnline = Duration.between(logOnTime, logOffTime);
-            long secondsServedNow = Math.abs(timeOnline.getSeconds());
-            secondsAlreadyServed += secondsServedNow;
-        }
     }
 
     public void resumeCooldowns() {
@@ -193,9 +185,7 @@ public class PVPPlayer implements ConfigurationSerializable {
         }
         if(pvpDeathTimer != null) {
             pvpDeathTimer.resume();
-        }
-
-        logOnTime = LocalDateTime.now();
+        }s
     }
 
     /**

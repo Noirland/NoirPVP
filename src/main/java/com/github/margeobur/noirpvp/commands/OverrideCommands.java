@@ -65,8 +65,7 @@ public class OverrideCommands implements CommandExecutor {
                 }
             }
         } else if(args[0].equalsIgnoreCase("saveall")) {
-            JailCell.saveJailShortlist();
-            NoirPVPConfig.getInstance().saveCells();
+            JailCell.saveCells();
             PVPPlayer.saveAllPVPData();
         } else if(args[0].equalsIgnoreCase("timer") && args.length > 1) {
             if(args[1].equalsIgnoreCase("start")) {
